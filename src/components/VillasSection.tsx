@@ -7,9 +7,13 @@ import { VillaCard } from "./VillaCard";
 
 interface VillasSectionProps {
   onInquire: (villa: Villa) => void;
+  onOpenGallery?: (villa: Villa, photoIndex: number) => void;
 }
 
-export const VillasSection: React.FC<VillasSectionProps> = ({ onInquire }) => {
+export const VillasSection: React.FC<VillasSectionProps> = ({
+  onInquire,
+  onOpenGallery,
+}) => {
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
   const filteredVillas = siteConfig.villas.filter((v) => {
@@ -63,7 +67,12 @@ export const VillasSection: React.FC<VillasSectionProps> = ({ onInquire }) => {
       {/* 2-Column Responsive Grid for 4 Villas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
         {filteredVillas.map((villa) => (
-          <VillaCard key={villa.id} villa={villa} onInquire={onInquire} />
+          <VillaCard
+            key={villa.id}
+            villa={villa}
+            onInquire={onInquire}
+            onOpenGallery={onOpenGallery}
+          />
         ))}
       </div>
     </section>

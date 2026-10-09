@@ -3,41 +3,123 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Villa } from "@/types";
-import { MapPin, Users, Bed, Bath, Waves, Sparkles, Check, ChevronRight } from "lucide-react";
+import {
+  MapPin,
+  Users,
+  Bed,
+  Bath,
+  Waves,
+  Sparkles,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Camera,
+} from "lucide-react";
 
 interface VillaCardProps {
   villa: Villa;
   onInquire: (villa: Villa) => void;
+  onOpenGallery?: (villa: Villa, photoIndex: number) => void;
 }
 
-export const VillaCard: React.FC<VillaCardProps> = ({ villa, onInquire }) => {
+export const VillaCard: React.FC<VillaCardProps> = ({
+  villa,
+  onInquire,
+  onOpenGallery,
+}) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
+
+  const photos = villa.gallery && villa.gallery.length > 0 ? villa.gallery : [villa.image];
+
+  const handleNextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentPhotoIdx((prev) => (prev + 1) % photos.length);
+  };
+
+  const handlePrevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentPhotoIdx((prev) => (prev - 1 + photos.length) % photos.length);
+  };
 
   return (
     <div className="group bg-white rounded-3xl overflow-hidden border border-[#EAE5DC] shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col justify-between">
-      {/* Image Container with Hover Scale */}
-      <div className="relative h-72 sm:h-80 md:h-96 w-full overflow-hidden bg-neutral-100 cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
+      {/* Interactive Photo Showcase with Slider Controls */}
+      <div
+        className="relative h-72 sm:h-80 md:h-96 w-full overflow-hidden bg-neutral-900 cursor-pointer"
+        onClick={() => onOpenGallery?.(villa, currentPhotoIdx)}
+      >
         <Image
-          src={villa.image}
-          alt={villa.name}
+          src={photos[currentPhotoIdx]}
+          alt={`${villa.name} - Photo ${currentPhotoIdx + 1}`}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-75 group-hover:opacity-60 transition-opacity" />
 
-        {/* Top Floating Badges */}
-        <div className="absolute top-4 left-4 flex gap-2 items-center">
-          <span className="bg-[#14171A]/80 backdrop-blur-md text-[#C2A476] border border-[#C2A476]/30 text-xs font-serif font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+        {/* Top Badges */}
+        <div className="absolute top-4 left-4 flex gap-2 items-center z-10">
+          <span className="bg-[#14171A]/85 backdrop-blur-md text-[#C2A476] border border-[#C2A476]/30 text-xs font-serif font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
             {villa.code}
           </span>
-          <span className="bg-white/85 backdrop-blur-md text-neutral-800 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          <span className="bg-white/90 backdrop-blur-md text-neutral-800 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
             {villa.district}
           </span>
         </div>
 
-        {/* Bottom Image Overlay Tagline */}
-        <div className="absolute bottom-4 left-4 right-4 text-white">
+        {/* Photo Count Pill */}
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenGallery?.(villa, currentPhotoIdx);
+            }}
+            className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1 rounded-full border border-white/20 transition-all"
+          >
+            <Camera className="w-3.5 h-3.5 text-[#C2A476]" />
+            <span>
+              {currentPhotoIdx + 1}/{photos.length} Photos
+            </span>
+          </button>
+        </div>
+
+        {/* Next / Prev Photo Arrows (Visible on hover & touch) */}
+        {photos.length > 1 && (
+          <>
+            <button
+              onClick={handlePrevPhoto}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-md opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 border border-white/10"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleNextPhoto}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-md opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 border border-white/10"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Bottom Dots */}
+            <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {photos.map((_, dotIdx) => (
+                <span
+                  key={dotIdx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    dotIdx === currentPhotoIdx
+                      ? "w-5 bg-[#C2A476]"
+                      : "w-1.5 bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Bottom Tagline on Image */}
+        <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
           <p className="text-xs text-[#EAE4D7] tracking-wider uppercase font-medium">
             {villa.poolType}
           </p>
@@ -61,21 +143,27 @@ export const VillaCard: React.FC<VillaCardProps> = ({ villa, onInquire }) => {
             {villa.description}
           </p>
 
-          {/* Key Property Specs (No Price, Focus on Luxury Capacity) */}
+          {/* Key Property Specs (No Price, Luxury Capacity Focus) */}
           <div className="grid grid-cols-4 gap-2 py-4 border-y border-[#EAE5DC] text-center mb-6 bg-[#FAF8F5]/60 rounded-xl">
             <div className="flex flex-col items-center justify-center p-1">
               <Bed className="w-4 h-4 text-[#C2A476] mb-1" />
-              <span className="text-xs font-semibold text-neutral-800">{villa.bedrooms} Beds</span>
+              <span className="text-xs font-semibold text-neutral-800">
+                {villa.bedrooms} Beds
+              </span>
               <span className="text-[10px] text-neutral-400 uppercase">Suites</span>
             </div>
             <div className="flex flex-col items-center justify-center p-1">
               <Bath className="w-4 h-4 text-[#C2A476] mb-1" />
-              <span className="text-xs font-semibold text-neutral-800">{villa.bathrooms} Baths</span>
+              <span className="text-xs font-semibold text-neutral-800">
+                {villa.bathrooms} Baths
+              </span>
               <span className="text-[10px] text-neutral-400 uppercase">En-suite</span>
             </div>
             <div className="flex flex-col items-center justify-center p-1">
               <Users className="w-4 h-4 text-[#C2A476] mb-1" />
-              <span className="text-xs font-semibold text-neutral-800">{villa.maxGuests} Guests</span>
+              <span className="text-xs font-semibold text-neutral-800">
+                {villa.maxGuests} Guests
+              </span>
               <span className="text-[10px] text-neutral-400 uppercase">Capacity</span>
             </div>
             <div className="flex flex-col items-center justify-center p-1">
@@ -96,42 +184,79 @@ export const VillaCard: React.FC<VillaCardProps> = ({ villa, onInquire }) => {
           </ul>
         </div>
 
-        {/* Actions (Strictly Inquiry & Reservation - NO PRICE) */}
-        <div className="pt-2 flex items-center gap-3">
-          <button
-            onClick={() => onInquire(villa)}
-            className="flex-1 bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-lg active:scale-95"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Request Availability</span>
-          </button>
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="p-3 rounded-xl border border-neutral-300 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 transition-colors"
-            title="View Details"
-          >
-            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${showDetails ? "rotate-90" : ""}`} />
-          </button>
-        </div>
-
-        {/* Expandable Details Drawer */}
-        {showDetails && (
-          <div className="mt-4 pt-4 border-t border-neutral-200 text-xs text-neutral-600 animate-fade-in">
-            <h4 className="font-semibold text-neutral-900 uppercase tracking-wider text-[11px] mb-2">
-              All Included Amenities:
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {villa.amenities.map((amenity, i) => (
-                <span
-                  key={i}
-                  className="bg-neutral-100 text-neutral-700 px-2.5 py-1 rounded-md text-[11px]"
-                >
-                  {amenity}
-                </span>
-              ))}
-            </div>
+        {/* Action Buttons */}
+        <div>
+          <div className="pt-2 flex items-center gap-3">
+            <button
+              onClick={() => onInquire(villa)}
+              className="flex-1 bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-lg active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Request Availability</span>
+            </button>
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="p-3 rounded-xl border border-neutral-300 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 transition-colors"
+              title="View More Details & Spaces"
+            >
+              <ChevronRight
+                className={`w-4 h-4 transition-transform duration-300 ${
+                  showDetails ? "rotate-90" : ""
+                }`}
+              />
+            </button>
           </div>
-        )}
+
+          {/* Expandable Details Drawer */}
+          {showDetails && (
+            <div className="mt-4 pt-4 border-t border-neutral-200 text-xs text-neutral-600 animate-fade-in space-y-4">
+              {/* Photo Thumbnails Switcher */}
+              {photos.length > 1 && (
+                <div>
+                  <span className="font-semibold text-neutral-800 text-[11px] uppercase tracking-wider block mb-2">
+                    Click to preview all spaces:
+                  </span>
+                  <div className="grid grid-cols-5 gap-2">
+                    {photos.map((pic, pIdx) => (
+                      <button
+                        key={pIdx}
+                        onClick={() => setCurrentPhotoIdx(pIdx)}
+                        className={`relative h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                          pIdx === currentPhotoIdx
+                            ? "border-[#C2A476] scale-105"
+                            : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <Image
+                          src={pic}
+                          alt="thumbnail"
+                          fill
+                          className="object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold text-neutral-900 uppercase tracking-wider text-[11px] mb-2">
+                  All Included Amenities:
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {villa.amenities.map((amenity, i) => (
+                    <span
+                      key={i}
+                      className="bg-neutral-100 text-neutral-700 px-2.5 py-1 rounded-md text-[11px]"
+                    >
+                      {amenity}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

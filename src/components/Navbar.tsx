@@ -55,6 +55,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
             Experience
           </a>
           <a
+            href="#gallery"
+            className="hover:text-[#C2A476] transition-colors duration-200"
+          >
+            Gallery
+          </a>
+          <a
             href="#amenities"
             className="hover:text-[#C2A476] transition-colors duration-200"
           >
@@ -129,6 +135,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
               className="hover:text-[#C2A476] py-1 border-b border-white/5"
             >
               The Experience
+            </a>
+            <a
+              href="#gallery"
+              onClick={() => setMobileMenuOpen(false)}
+              className="hover:text-[#C2A476] py-1 border-b border-white/5"
+            >
+              Spaces & Gallery
             </a>
             <a
               href="#amenities"

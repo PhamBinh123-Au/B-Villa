@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { siteConfig } from "@/config/siteConfig";
-import { Sparkles, Calendar, Users, Home, ArrowRight } from "lucide-react";
+import { Sparkles, Calendar, Home, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface HeroProps {
   onCheckAvailability: (query: {
@@ -14,11 +14,38 @@ interface HeroProps {
   }) => void;
 }
 
+const HERO_SLIDES = [
+  {
+    image: "/images/hero/hero-luxury-villa.jpg",
+    title: "Crystal Turquoise Swimming Pool",
+    subtitle: "Son Tra Coastline Sanctuary",
+  },
+  {
+    image: "/images/gallery/garden-exterior.jpg",
+    title: "Architectural Stone Facade & Tropical Lawn",
+    subtitle: "Private Gated Coastal Living",
+  },
+  {
+    image: "/images/gallery/bedroom-poolview.jpg",
+    title: "Poolside En-Suite Master Residence",
+    subtitle: "Floor-to-Ceiling Glass Harmony",
+  },
+];
+
 export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedVilla, setSelectedVilla] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(2);
+
+  // Automatic smooth slide rotation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,24 +57,43 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
     });
   };
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+  };
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black text-white">
-      {/* Background Hero Image with Ambient Overlay */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0d0f12] text-white">
+      {/* Background Hero Image Slides with Smooth Cross-fade */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/villas/b1-villa.jpg"
-          alt="Luxury Villa Da Nang"
-          fill
-          priority
-          className="object-cover object-center scale-105 animate-[pulse_10s_ease-in-out_infinite] opacity-65"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1114] via-black/40 to-black/70" />
+        {HERO_SLIDES.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            <Image
+              src={slide.image}
+              alt={slide.title}
+              fill
+              priority={index === 0}
+              className="object-cover object-center scale-105 transition-transform duration-[8000ms] ease-out"
+            />
+          </div>
+        ))}
+
+        {/* Cinematic Vignette Overlay (Ensures headline is 100% crisp without image text interference) */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e1114] via-black/45 to-black/75 backdrop-brightness-95" />
       </div>
 
       {/* Hero Content */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-24 text-center flex flex-col items-center">
+      <div className="relative z-30 max-w-5xl mx-auto px-6 pt-32 pb-24 text-center flex flex-col items-center">
         {/* Subtle Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#EAE4D7] text-xs uppercase tracking-[0.2em] mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#EAE4D7] text-xs uppercase tracking-[0.2em] mb-6 shadow-sm">
           <Sparkles className="w-3.5 h-3.5 text-[#C2A476]" />
           <span>Exclusive Private Sanctuaries</span>
         </div>
@@ -72,10 +118,10 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             <ArrowRight className="w-4 h-4" />
           </a>
           <a
-            href="#experience"
+            href="#gallery"
             className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs md:text-sm uppercase tracking-widest font-medium px-8 py-4 rounded-full transition-all duration-300"
           >
-            <span>The Villa Lifestyle</span>
+            <span>View Villa Spaces</span>
           </a>
         </div>
 
@@ -150,6 +196,32 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Bottom Corner Slide Controls */}
+      <div className="hidden sm:flex absolute bottom-8 right-8 z-30 items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-xs">
+        <span className="text-[11px] text-neutral-400">
+          {HERO_SLIDES[currentSlide].title}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevSlide}
+            className="p-1 hover:text-[#C2A476] transition-colors"
+            aria-label="Previous Hero Image"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-[10px] text-neutral-300 font-mono px-1">
+            0{currentSlide + 1} / 0{HERO_SLIDES.length}
+          </span>
+          <button
+            onClick={nextSlide}
+            className="p-1 hover:text-[#C2A476] transition-colors"
+            aria-label="Next Hero Image"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </section>

@@ -10,9 +10,20 @@ export interface Villa {
   maxGuests: number;
   poolType: string;
   image: string;
+  gallery: string[];
   description: string;
   highlights: string[];
   amenities: string[];
+}
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: "all" | "pool" | "bedroom" | "exterior" | "dining";
+  categoryLabel: string;
+  src: string;
+  villaCode: string;
+  description: string;
 }
 
 export type InquiryStatus = "pending" | "contacted" | "confirmed" | "cancelled";
@@ -59,4 +70,5 @@ export interface SiteConfig {
   };
   villas: Villa[];
   amenities: AmenityItem[];
+  galleryItems: GalleryItem[];
 }

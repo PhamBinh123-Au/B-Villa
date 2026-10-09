@@ -48,7 +48,15 @@ export const siteConfig: SiteConfig = {
       bathrooms: 4,
       maxGuests: 10,
       poolType: "Private Garden Lap Pool",
-      image: "/images/villas/b1-villa.jpg",
+      image: "/images/gallery/pool-oasis.jpg",
+      gallery: [
+        "/images/gallery/pool-oasis.jpg",
+        "/images/gallery/garden-exterior.jpg",
+        "/images/gallery/bedroom-poolview.jpg",
+        "/images/gallery/kitchen-dining.jpg",
+        "/images/gallery/living-dining-view.jpg",
+        "/images/villas/b1-villa.jpg",
+      ],
       description:
         "B1 Villa features a breathtaking linear swimming pool flanked by tropical green palms, pristine stone garden paths, and an expansive chef's open kitchen and dining area. Designed for discerning families and groups seeking a sunlit, peaceful beach retreat.",
       highlights: [
@@ -78,6 +86,12 @@ export const siteConfig: SiteConfig = {
       maxGuests: 10,
       poolType: "Indoor Skylight Waterfall Pool",
       image: "/images/villas/b2-villa.jpg",
+      gallery: [
+        "/images/villas/b2-villa.jpg",
+        "/images/gallery/bedroom-poolview.jpg",
+        "/images/gallery/living-dining-view.jpg",
+        "/images/gallery/kitchen-dining.jpg",
+      ],
       description:
         "A masterpiece of clean architectural lines and luminous white spaces. B2 Villa showcases a dramatic indoor swimming pool beneath a naturally illuminated skylight atrium, with direct visual flow into the master bedroom suites and gourmet kitchen.",
       highlights: [
@@ -107,6 +121,11 @@ export const siteConfig: SiteConfig = {
       maxGuests: 5,
       poolType: "Circular Curved Plunge Pool",
       image: "/images/villas/b3-villa.jpg",
+      gallery: [
+        "/images/villas/b3-villa.jpg",
+        "/images/gallery/pool-oasis.jpg",
+        "/images/gallery/bedroom-poolview.jpg",
+      ],
       description:
         "Designed specifically for couples, honeymooners, and smaller families, B3 Villa offers an intimate sanctuary featuring a signature circular plunge pool, an airy open-plan living lounge, and serene master suites opening directly onto sunlit waters.",
       highlights: [
@@ -136,6 +155,11 @@ export const siteConfig: SiteConfig = {
       maxGuests: 10,
       poolType: "Private Courtyard Pool",
       image: "/images/villas/b4-villa.jpg",
+      gallery: [
+        "/images/villas/b4-villa.jpg",
+        "/images/gallery/garden-exterior.jpg",
+        "/images/gallery/kitchen-dining.jpg",
+      ],
       description:
         "B4 Villa welcomes you through a picturesque white stone facade surrounded by blooming bougainvillea into an exclusive sanctuary. Enjoy private courtyard swimming, poolside master bedrooms, and an elegant black-and-white dining area.",
       highlights: [
@@ -192,6 +216,82 @@ export const siteConfig: SiteConfig = {
       title: "Fully Equipped Gourmet Kitchen",
       description:
         "Complete with high-end appliances, microwave, refrigerator, cookware, and barbecue setup for private feasts.",
+    },
+  ],
+
+  // SPACES & ARCHITECTURAL VISUAL GALLERY
+  galleryItems: [
+    {
+      id: "gal-1",
+      title: "Turquoise Swimming Pool & Sun Loungers",
+      category: "pool",
+      categoryLabel: "Private Pool",
+      src: "/images/gallery/pool-oasis.jpg",
+      villaCode: "B1 Villa",
+      description: "Crystal clear pool lined with private sunbeds and open architectural glass doors.",
+    },
+    {
+      id: "gal-2",
+      title: "Poolside Master Suite with Floor-to-Ceiling Glass",
+      category: "bedroom",
+      categoryLabel: "Master Suite",
+      src: "/images/gallery/bedroom-poolview.jpg",
+      villaCode: "B1 Villa",
+      description: "Plush king bed opening straight to refreshing morning water and sunlight.",
+    },
+    {
+      id: "gal-3",
+      title: "White Stone Facade & Tropical Garden Walkway",
+      category: "exterior",
+      categoryLabel: "Garden & Exterior",
+      src: "/images/gallery/garden-exterior.jpg",
+      villaCode: "B1 Villa",
+      description: "Clean stone brick pathways surrounded by verdant lawn, trees, and privacy perimeter.",
+    },
+    {
+      id: "gal-4",
+      title: "Gourmet Chef Kitchen & 10-Person Banquet Table",
+      category: "dining",
+      categoryLabel: "Kitchen & Dining",
+      src: "/images/gallery/kitchen-dining.jpg",
+      villaCode: "B1 Villa",
+      description: "Contemporary kitchen complete with washer, microwave, and expansive dining setup.",
+    },
+    {
+      id: "gal-5",
+      title: "Sunlit Dining Lounge with Poolside Patio View",
+      category: "dining",
+      categoryLabel: "Living & Dining",
+      src: "/images/gallery/living-dining-view.jpg",
+      villaCode: "B1 Villa",
+      description: "Seamless indoor-outdoor harmony with wide glass sliding doors.",
+    },
+    {
+      id: "gal-6",
+      title: "Indoor Skylight Atrium Swimming Pool",
+      category: "pool",
+      categoryLabel: "Indoor Pool",
+      src: "/images/villas/b2-villa.jpg",
+      villaCode: "B2 Villa",
+      description: "Architectural skylight illumination and minimalist all-white master suites.",
+    },
+    {
+      id: "gal-7",
+      title: "Signature Circular Plunge Pool & Cozy Living",
+      category: "pool",
+      categoryLabel: "Plunge Pool",
+      src: "/images/villas/b3-villa.jpg",
+      villaCode: "B3 Villa",
+      description: "Intimate circular curved pool designed for peaceful couples and small groups.",
+    },
+    {
+      id: "gal-8",
+      title: "Private Courtyard & Bougainvillea Facade",
+      category: "exterior",
+      categoryLabel: "Courtyard Living",
+      src: "/images/villas/b4-villa.jpg",
+      villaCode: "B4 Villa",
+      description: "Gated peaceful sanctuary near Son Tra Peninsula with poolside master bedrooms.",
     },
   ],
 };
