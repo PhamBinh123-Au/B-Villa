@@ -57,15 +57,13 @@ export const VillaCard: React.FC<VillaCardProps> = ({
     >
       {/* Interactive Photo Showcase with Slider Controls */}
       <div
-        className="relative h-72 sm:h-80 md:h-96 w-full overflow-hidden bg-neutral-900 cursor-pointer"
+        className="relative w-full overflow-hidden bg-[#181B1E] cursor-pointer aspect-square"
         style={{
           position: "relative",
           width: "100%",
-          height: "360px",
-          minHeight: "360px",
-          maxHeight: "360px",
+          aspectRatio: "1 / 1",
           overflow: "hidden",
-          backgroundColor: "#111315",
+          backgroundColor: "#181B1E",
         }}
         onClick={() => onOpenGallery?.(villa, currentPhotoIdx)}
       >
@@ -73,15 +71,22 @@ export const VillaCard: React.FC<VillaCardProps> = ({
           src={photos[currentPhotoIdx]}
           alt={`${villa.name} - Photo ${currentPhotoIdx + 1}`}
           fill
+          priority={currentPhotoIdx === 0}
           sizes="(max-width: 768px) 100vw, 50vw"
-          style={{ objectFit: "cover", objectPosition: "center" }}
-          className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+          style={{
+            objectFit: currentPhotoIdx === 0 ? "contain" : "cover",
+            objectPosition: "center",
+          }}
+          className="transition-transform duration-700 ease-out hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-75 group-hover:opacity-60 transition-opacity" />
+        {/* Subtle overlay only for secondary photos without text */}
+        {currentPhotoIdx > 0 && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-75 group-hover:opacity-60 transition-opacity" />
+        )}
 
         {/* Top Badges */}
         <div className="absolute top-4 left-4 flex gap-2 items-center z-10">
-          <span className="bg-[#14171A]/85 backdrop-blur-md text-[#C2A476] border border-[#C2A476]/30 text-xs font-serif font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+          <span className="bg-[#14171A]/90 backdrop-blur-md text-[#C2A476] border border-[#C2A476]/30 text-xs font-serif font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
             {villa.code}
           </span>
           <span className="bg-white/90 backdrop-blur-md text-neutral-800 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
@@ -139,15 +144,17 @@ export const VillaCard: React.FC<VillaCardProps> = ({
           </>
         )}
 
-        {/* Bottom Tagline on Image */}
-        <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
-          <p className="text-xs text-[#EAE4D7] tracking-wider uppercase font-medium">
-            {villa.poolType}
-          </p>
-          <h3 className="font-serif text-xl sm:text-2xl font-normal text-white mt-0.5">
-            {villa.name}
-          </h3>
-        </div>
+        {/* Bottom Tagline on Image (only for secondary photos) */}
+        {currentPhotoIdx > 0 && (
+          <div className="absolute bottom-4 left-4 right-4 text-white z-10 pointer-events-none">
+            <p className="text-xs text-[#EAE4D7] tracking-wider uppercase font-medium">
+              {villa.poolType}
+            </p>
+            <h3 className="font-serif text-xl sm:text-2xl font-normal text-white mt-0.5">
+              {villa.name}
+            </h3>
+          </div>
+        )}
       </div>
 
       {/* Card Body */}

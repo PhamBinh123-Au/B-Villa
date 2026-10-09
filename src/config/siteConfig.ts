@@ -48,8 +48,9 @@ export const siteConfig: SiteConfig = {
       bathrooms: 4,
       maxGuests: 10,
       poolType: "Private Garden Lap Pool",
-      image: "/images/gallery/pool-oasis.jpg",
+      image: "/images/villas/b1-villa.jpg",
       gallery: [
+        "/images/villas/b1-villa.jpg",
         "/images/gallery/pool-oasis.jpg",
         "/images/gallery/garden-exterior.jpg",
         "/images/gallery/bedroom-poolview.jpg",
@@ -86,10 +87,10 @@ export const siteConfig: SiteConfig = {
       poolType: "Indoor Skylight Waterfall Pool",
       image: "/images/villas/b2-villa.jpg",
       gallery: [
+        "/images/villas/b2-villa.jpg",
         "/images/gallery/bedroom-poolview.jpg",
         "/images/gallery/living-dining-view.jpg",
         "/images/gallery/kitchen-dining.jpg",
-        "/images/villas/b2-villa.jpg",
       ],
       description:
         "A masterpiece of clean architectural lines and luminous white spaces. B2 Villa showcases a dramatic indoor swimming pool beneath a naturally illuminated skylight atrium, with direct visual flow into the master bedroom suites and gourmet kitchen.",
@@ -121,9 +122,9 @@ export const siteConfig: SiteConfig = {
       poolType: "Circular Curved Plunge Pool",
       image: "/images/villas/b3-villa.jpg",
       gallery: [
+        "/images/villas/b3-villa.jpg",
         "/images/gallery/pool-oasis.jpg",
         "/images/gallery/bedroom-poolview.jpg",
-        "/images/villas/b3-villa.jpg",
       ],
       description:
         "Designed specifically for couples, honeymooners, and smaller families, B3 Villa offers an intimate sanctuary featuring a signature circular plunge pool, an airy open-plan living lounge, and serene master suites opening directly onto sunlit waters.",
@@ -153,8 +154,9 @@ export const siteConfig: SiteConfig = {
       bathrooms: 4,
       maxGuests: 10,
       poolType: "Private Courtyard Pool",
-      image: "/images/gallery/garden-exterior.jpg",
+      image: "/images/villas/b4-villa.jpg",
       gallery: [
+        "/images/villas/b4-villa.jpg",
         "/images/gallery/garden-exterior.jpg",
         "/images/gallery/kitchen-dining.jpg",
         "/images/gallery/living-dining-view.jpg",
