@@ -65,7 +65,14 @@ export const VillasSection: React.FC<VillasSectionProps> = ({
       </div>
 
       {/* 2-Column Responsive Grid for 4 Villas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 500px), 1fr))",
+          gap: "2.5rem",
+        }}
+      >
         {filteredVillas.map((villa) => (
           <VillaCard
             key={villa.id}

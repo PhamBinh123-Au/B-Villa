@@ -55,7 +55,6 @@ export const siteConfig: SiteConfig = {
         "/images/gallery/bedroom-poolview.jpg",
         "/images/gallery/kitchen-dining.jpg",
         "/images/gallery/living-dining-view.jpg",
-        "/images/villas/b1-villa.jpg",
       ],
       description:
         "B1 Villa features a breathtaking linear swimming pool flanked by tropical green palms, pristine stone garden paths, and an expansive chef's open kitchen and dining area. Designed for discerning families and groups seeking a sunlit, peaceful beach retreat.",
@@ -87,10 +86,10 @@ export const siteConfig: SiteConfig = {
       poolType: "Indoor Skylight Waterfall Pool",
       image: "/images/villas/b2-villa.jpg",
       gallery: [
-        "/images/villas/b2-villa.jpg",
         "/images/gallery/bedroom-poolview.jpg",
         "/images/gallery/living-dining-view.jpg",
         "/images/gallery/kitchen-dining.jpg",
+        "/images/villas/b2-villa.jpg",
       ],
       description:
         "A masterpiece of clean architectural lines and luminous white spaces. B2 Villa showcases a dramatic indoor swimming pool beneath a naturally illuminated skylight atrium, with direct visual flow into the master bedroom suites and gourmet kitchen.",
@@ -122,9 +121,9 @@ export const siteConfig: SiteConfig = {
       poolType: "Circular Curved Plunge Pool",
       image: "/images/villas/b3-villa.jpg",
       gallery: [
-        "/images/villas/b3-villa.jpg",
         "/images/gallery/pool-oasis.jpg",
         "/images/gallery/bedroom-poolview.jpg",
+        "/images/villas/b3-villa.jpg",
       ],
       description:
         "Designed specifically for couples, honeymooners, and smaller families, B3 Villa offers an intimate sanctuary featuring a signature circular plunge pool, an airy open-plan living lounge, and serene master suites opening directly onto sunlit waters.",
@@ -154,11 +153,12 @@ export const siteConfig: SiteConfig = {
       bathrooms: 4,
       maxGuests: 10,
       poolType: "Private Courtyard Pool",
-      image: "/images/villas/b4-villa.jpg",
+      image: "/images/gallery/garden-exterior.jpg",
       gallery: [
-        "/images/villas/b4-villa.jpg",
         "/images/gallery/garden-exterior.jpg",
         "/images/gallery/kitchen-dining.jpg",
+        "/images/gallery/living-dining-view.jpg",
+        "/images/gallery/pool-oasis.jpg",
       ],
       description:
         "B4 Villa welcomes you through a picturesque white stone facade surrounded by blooming bougainvillea into an exclusive sanctuary. Enjoy private courtyard swimming, poolside master bedrooms, and an elegant black-and-white dining area.",

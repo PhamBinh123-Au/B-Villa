@@ -43,10 +43,30 @@ export const VillaCard: React.FC<VillaCardProps> = ({
   };
 
   return (
-    <div className="group bg-white rounded-3xl overflow-hidden border border-[#EAE5DC] shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col justify-between">
+    <div
+      className="group bg-white rounded-3xl overflow-hidden border border-[#EAE5DC] shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col justify-between"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: "1.5rem",
+        overflow: "hidden",
+        backgroundColor: "#ffffff",
+        border: "1px solid #EAE5DC",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
+      }}
+    >
       {/* Interactive Photo Showcase with Slider Controls */}
       <div
         className="relative h-72 sm:h-80 md:h-96 w-full overflow-hidden bg-neutral-900 cursor-pointer"
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "360px",
+          minHeight: "360px",
+          maxHeight: "360px",
+          overflow: "hidden",
+          backgroundColor: "#111315",
+        }}
         onClick={() => onOpenGallery?.(villa, currentPhotoIdx)}
       >
         <Image
@@ -54,6 +74,7 @@ export const VillaCard: React.FC<VillaCardProps> = ({
           alt={`${villa.name} - Photo ${currentPhotoIdx + 1}`}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
+          style={{ objectFit: "cover", objectPosition: "center" }}
           className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-75 group-hover:opacity-60 transition-opacity" />
@@ -144,29 +165,53 @@ export const VillaCard: React.FC<VillaCardProps> = ({
           </p>
 
           {/* Key Property Specs (No Price, Luxury Capacity Focus) */}
-          <div className="grid grid-cols-4 gap-2 py-4 border-y border-[#EAE5DC] text-center mb-6 bg-[#FAF8F5]/60 rounded-xl">
-            <div className="flex flex-col items-center justify-center p-1">
+          <div
+            className="grid grid-cols-4 gap-2 py-4 border-y border-[#EAE5DC] text-center mb-6 bg-[#FAF8F5]/60 rounded-xl"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: "0.5rem",
+              padding: "1rem 0.5rem",
+              margin: "1rem 0",
+              borderTop: "1px solid #EAE5DC",
+              borderBottom: "1px solid #EAE5DC",
+              borderRadius: "0.75rem",
+            }}
+          >
+            <div
+              className="flex flex-col items-center justify-center p-1"
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+            >
               <Bed className="w-4 h-4 text-[#C2A476] mb-1" />
               <span className="text-xs font-semibold text-neutral-800">
                 {villa.bedrooms} Beds
               </span>
               <span className="text-[10px] text-neutral-400 uppercase">Suites</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1">
+            <div
+              className="flex flex-col items-center justify-center p-1"
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+            >
               <Bath className="w-4 h-4 text-[#C2A476] mb-1" />
               <span className="text-xs font-semibold text-neutral-800">
                 {villa.bathrooms} Baths
               </span>
               <span className="text-[10px] text-neutral-400 uppercase">En-suite</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1">
+            <div
+              className="flex flex-col items-center justify-center p-1"
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+            >
               <Users className="w-4 h-4 text-[#C2A476] mb-1" />
               <span className="text-xs font-semibold text-neutral-800">
                 {villa.maxGuests} Guests
               </span>
               <span className="text-[10px] text-neutral-400 uppercase">Capacity</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1">
+            <div
+              className="flex flex-col items-center justify-center p-1"
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+            >
               <Waves className="w-4 h-4 text-[#C2A476] mb-1" />
               <span className="text-xs font-semibold text-neutral-800">Private</span>
               <span className="text-[10px] text-neutral-400 uppercase">Pool</span>

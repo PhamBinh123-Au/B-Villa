@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import { siteConfig } from "@/config/siteConfig";
 import "./globals.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://serenedanangvillas.vercel.app"),
@@ -17,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.tagline,
-    images: ["/images/villas/b1-villa.jpg"],
+    images: ["/images/gallery/pool-oasis.jpg"],
     type: "website",
   },
 };
@@ -28,8 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="antialiased min-h-screen flex flex-col bg-[#FAF8F5]">
+    <html
+      lang="en"
+      className={`scroll-smooth ${playfair.variable} ${plusJakarta.variable}`}
+    >
+      <body className="antialiased min-h-screen flex flex-col bg-[#FAF8F5] font-sans text-[#14171A]">
         {children}
       </body>
     </html>
