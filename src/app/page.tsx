@@ -5,7 +5,6 @@ import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { VillasSection } from "@/components/VillasSection";
 import { ExperienceSection } from "@/components/ExperienceSection";
-import { GallerySection } from "@/components/GallerySection";
 import { AmenitiesSection } from "@/components/AmenitiesSection";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
@@ -60,9 +59,6 @@ export default function HomePage() {
 
       {/* Experience & Architectural Philosophy */}
       <ExperienceSection />
-
-      {/* Spaces & Visual Gallery */}
-      <GallerySection onInquire={handleOpenBooking} />
 
       {/* Signature Amenities */}
       <AmenitiesSection />

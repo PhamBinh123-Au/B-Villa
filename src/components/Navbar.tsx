@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-8 text-sm font-medium tracking-wider uppercase text-neutral-200">
+        <nav className="hidden lg:flex items-center space-x-7 text-sm font-medium tracking-wider uppercase text-neutral-200">
           <a
             href="#villas"
             className="hover:text-[#C2A476] transition-colors duration-200"
@@ -53,12 +53,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
             className="hover:text-[#C2A476] transition-colors duration-200"
           >
             Experience
-          </a>
-          <a
-            href="#gallery"
-            className="hover:text-[#C2A476] transition-colors duration-200"
-          >
-            Gallery
           </a>
           <a
             href="#amenities"
@@ -74,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
           </a>
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2 py-1 rounded border border-white/10 hover:border-white/30 transition-all"
+            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2 py-1 rounded border border-white/10 hover:border-white/30 transition-all ml-1"
             title="Owner & Staff Portal"
           >
             <Shield className="w-3.5 h-3.5 text-[#C2A476]" />
@@ -83,13 +77,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
         </nav>
 
         {/* Action Buttons */}
-        <div className="hidden sm:flex items-center space-x-4">
+        <div className="hidden sm:flex items-center space-x-5 flex-shrink-0">
           <a
             href={`tel:${siteConfig.contact.phone.replace(/\s+/g, "")}`}
-            className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-300 hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
           >
-            <Phone className="w-3.5 h-3.5 text-[#C2A476]" />
-            <span>{siteConfig.contact.phone}</span>
+            <Phone className="w-3.5 h-3.5 text-[#C2A476] flex-shrink-0" />
+            <span className="whitespace-nowrap font-medium tracking-normal text-sm">
+              {siteConfig.contact.phone}
+            </span>
           </a>
           <button
             onClick={onOpenBooking}
@@ -135,13 +131,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking }) => {
               className="hover:text-[#C2A476] py-1 border-b border-white/5"
             >
               The Experience
-            </a>
-            <a
-              href="#gallery"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#C2A476] py-1 border-b border-white/5"
-            >
-              Spaces & Gallery
             </a>
             <a
               href="#amenities"

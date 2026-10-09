@@ -118,10 +118,10 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             <ArrowRight className="w-4 h-4" />
           </a>
           <a
-            href="#gallery"
+            href="#experience"
             className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs md:text-sm uppercase tracking-widest font-medium px-8 py-4 rounded-full transition-all duration-300"
           >
-            <span>View Villa Spaces</span>
+            <span>The Villa Lifestyle</span>
           </a>
         </div>
 
