@@ -1,6 +1,8 @@
 import { BookingInquiry, InquiryStatus } from "@/types";
 
 const STORAGE_KEY = "danang_villa_booking_inquiries_v1";
+export const SYNC_CHANNEL_NAME = "danang_villa_realtime_bookings";
+export const LOCAL_EVENT_NAME = "danang_realtime_booking_event";
 
 const SAMPLE_INITIAL_INQUIRIES: BookingInquiry[] = [
   {
@@ -50,6 +52,37 @@ const SAMPLE_INITIAL_INQUIRIES: BookingInquiry[] = [
   },
 ];
 
+export interface RealtimeSyncPayload {
+  action: "ADD" | "UPDATE" | "DELETE" | "RESET";
+  inquiry?: BookingInquiry;
+  id?: string;
+  timestamp: number;
+}
+
+function broadcastSync(payload: RealtimeSyncPayload) {
+  if (typeof window === "undefined") return;
+
+  // 1. Dispatch custom event for current window
+  try {
+    window.dispatchEvent(
+      new CustomEvent(LOCAL_EVENT_NAME, { detail: payload })
+    );
+  } catch (err) {
+    console.warn("Local event dispatch error", err);
+  }
+
+  // 2. BroadcastChannel for instant cross-tab communication
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel(SYNC_CHANNEL_NAME);
+      channel.postMessage(payload);
+      channel.close();
+    }
+  } catch (err) {
+    console.warn("BroadcastChannel error", err);
+  }
+}
+
 export const bookingStore = {
   getInquiries(): BookingInquiry[] {
     if (typeof window === "undefined") return [];
@@ -80,19 +113,34 @@ export const bookingStore = {
     const updated = [newInquiry, ...inquiries];
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new Event("storage_inquiries_updated"));
+      broadcastSync({
+        action: "ADD",
+        inquiry: newInquiry,
+        timestamp: Date.now(),
+      });
     }
     return newInquiry;
   },
 
   updateStatus(id: string, status: InquiryStatus): void {
     const inquiries = this.getInquiries();
-    const updated = inquiries.map((item) =>
-      item.id === id ? { ...item, status } : item
-    );
+    let updatedInquiry: BookingInquiry | undefined;
+    const updated = inquiries.map((item) => {
+      if (item.id === id) {
+        updatedInquiry = { ...item, status };
+        return updatedInquiry;
+      }
+      return item;
+    });
+
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new Event("storage_inquiries_updated"));
+      broadcastSync({
+        action: "UPDATE",
+        id,
+        inquiry: updatedInquiry,
+        timestamp: Date.now(),
+      });
     }
   },
 
@@ -101,14 +149,72 @@ export const bookingStore = {
     const updated = inquiries.filter((item) => item.id !== id);
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new Event("storage_inquiries_updated"));
+      broadcastSync({
+        action: "DELETE",
+        id,
+        timestamp: Date.now(),
+      });
     }
   },
 
   resetSampleData(): void {
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_INITIAL_INQUIRIES));
-      window.dispatchEvent(new Event("storage_inquiries_updated"));
+      broadcastSync({
+        action: "RESET",
+        timestamp: Date.now(),
+      });
     }
+  },
+
+  /**
+   * Subscribe to real-time events across all tabs, local events, and storage updates
+   */
+  subscribe(callback: (payload: RealtimeSyncPayload) => void): () => void {
+    if (typeof window === "undefined") return () => {};
+
+    // 1. BroadcastChannel listener (cross-tab)
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        channel = new BroadcastChannel(SYNC_CHANNEL_NAME);
+        channel.onmessage = (event: MessageEvent<RealtimeSyncPayload>) => {
+          if (event.data) {
+            callback(event.data);
+          }
+        };
+      }
+    } catch (err) {
+      console.warn("Failed to create BroadcastChannel", err);
+    }
+
+    // 2. Storage event listener (standard browser cross-tab event)
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        callback({
+          action: "UPDATE",
+          timestamp: Date.now(),
+        });
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // 3. Local custom event listener (same-tab)
+    const handleLocal = (event: Event) => {
+      const customEvent = event as CustomEvent<RealtimeSyncPayload>;
+      if (customEvent.detail) {
+        callback(customEvent.detail);
+      }
+    };
+    window.addEventListener(LOCAL_EVENT_NAME, handleLocal);
+
+    // Return cleanup function
+    return () => {
+      if (channel) {
+        channel.close();
+      }
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(LOCAL_EVENT_NAME, handleLocal);
+    };
   },
 };

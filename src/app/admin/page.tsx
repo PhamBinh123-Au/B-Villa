@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { siteConfig } from "@/config/siteConfig";
-import { bookingStore } from "@/lib/bookingStore";
+import { bookingStore, RealtimeSyncPayload } from "@/lib/bookingStore";
 import { BookingInquiry, InquiryStatus } from "@/types";
 import {
   Shield,
@@ -23,9 +23,52 @@ import {
   Mail,
   Phone,
   AlertCircle,
+  Radio,
+  Sparkles,
+  BellRing,
 } from "lucide-react";
 
+// Web Audio Luxury Chime generator (Pure synthesized browser audio, zero external dependencies)
+function playLuxuryChime() {
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+
+    const now = ctx.currentTime;
+
+    // First note: D5 (587.33 Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0.18, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.55);
+
+    // Second note: A5 (880.00 Hz)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(880.0, now + 0.15);
+    gain2.gain.setValueAtTime(0.22, now + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.15);
+    osc2.stop(now + 0.85);
+  } catch (err) {
+    // Browser audio context policy might silence until first user click
+    console.debug("Web Audio notice", err);
+  }
+}
+
 export default function AdminPage() {
+  const [hasMounted, setHasMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -33,10 +76,13 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [villaFilter, setVillaFilter] = useState<string>("all");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ title: string; subtitle?: string } | null>(null);
+  const [newlyArrivedId, setNewlyArrivedId] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check if admin is already authenticated in session
+  // Check initial mounting & session authentication
   useEffect(() => {
+    setHasMounted(true);
     if (typeof window !== "undefined") {
       const sessionAuth = sessionStorage.getItem("admin_auth_status");
       if (sessionAuth === "authenticated") {
@@ -45,31 +91,83 @@ export default function AdminPage() {
     }
   }, []);
 
-  // Load inquiries
-  const loadInquiries = () => {
-    setInquiries(bookingStore.getInquiries());
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadInquiries();
-
-      const handleStorageUpdate = () => {
-        loadInquiries();
-        showToast("Inquiries updated with latest submissions!");
-      };
-
-      window.addEventListener("storage_inquiries_updated", handleStorageUpdate);
-      return () => {
-        window.removeEventListener("storage_inquiries_updated", handleStorageUpdate);
-      };
+  const showNotification = (title: string, subtitle?: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
     }
-  }, [isAuthenticated]);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    setToastMessage({ title, subtitle });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 6000);
   };
+
+  // Load inquiries from reactive store
+  const reloadInquiries = () => {
+    const list = bookingStore.getInquiries();
+    setInquiries(list);
+    return list;
+  };
+
+  // Setup Real-time Multi-Channel Listener
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Initial load
+    reloadInquiries();
+
+    // Subscribe to cross-tab BroadcastChannel + storage events
+    const unsubscribe = bookingStore.subscribe((payload: RealtimeSyncPayload) => {
+      const updatedList = reloadInquiries();
+
+      if (payload.action === "ADD") {
+        playLuxuryChime();
+        const guest = payload.inquiry?.guestName || "New Guest";
+        const villa = payload.inquiry?.villaName || "Villa Residence";
+        showNotification(
+          `🛎️ New Booking Received: ${guest}`,
+          `Reserved ${villa} (${payload.inquiry?.checkIn} - ${payload.inquiry?.checkOut})`
+        );
+        if (payload.inquiry?.id) {
+          setNewlyArrivedId(payload.inquiry.id);
+          // Clear highlight after 12 seconds
+          setTimeout(() => {
+            setNewlyArrivedId(null);
+          }, 12000);
+        }
+      } else if (payload.action === "UPDATE") {
+        showNotification("Inquiry status updated across sessions.");
+      } else if (payload.action === "RESET") {
+        showNotification("Reset to demo inquiries completed.");
+      }
+    });
+
+    // Fallback heartbeat poller (every 2.5 seconds) to ensure 100% sync if backgrounded
+    const poller = setInterval(() => {
+      const latest = bookingStore.getInquiries();
+      setInquiries((prev) => {
+        if (latest.length !== prev.length || JSON.stringify(latest) !== JSON.stringify(prev)) {
+          // Check if there is a new inquiry added
+          if (latest.length > prev.length && prev.length > 0) {
+            playLuxuryChime();
+            const newest = latest[0];
+            showNotification(
+              `🛎️ New Booking Received: ${newest.guestName}`,
+              `Reserved ${newest.villaName}`
+            );
+            setNewlyArrivedId(newest.id);
+            setTimeout(() => setNewlyArrivedId(null), 12000);
+          }
+          return latest;
+        }
+        return prev;
+      });
+    }, 2500);
+
+    return () => {
+      unsubscribe();
+      clearInterval(poller);
+    };
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +177,8 @@ export default function AdminPage() {
         sessionStorage.setItem("admin_auth_status", "authenticated");
       }
       setErrorMsg("");
+      // Trigger short audio on login to unlock browser audio context
+      playLuxuryChime();
     } else {
       setErrorMsg("Incorrect passcode. Please check siteConfig.ts or try again.");
     }
@@ -93,25 +193,34 @@ export default function AdminPage() {
 
   const handleStatusChange = (id: string, newStatus: InquiryStatus) => {
     bookingStore.updateStatus(id, newStatus);
-    loadInquiries();
-    showToast(`Inquiry #${id} updated to ${newStatus.toUpperCase()}`);
+    reloadInquiries();
+    showNotification(`Inquiry #${id} updated to ${newStatus.toUpperCase()}`);
   };
 
   const handleDelete = (id: string) => {
     if (confirm(`Are you sure you want to delete inquiry #${id}?`)) {
       bookingStore.deleteInquiry(id);
-      loadInquiries();
-      showToast(`Inquiry #${id} removed`);
+      reloadInquiries();
+      showNotification(`Inquiry #${id} removed`);
     }
   };
 
   const handleResetSample = () => {
     if (confirm("Reset booking inquiries to initial sample data?")) {
       bookingStore.resetSampleData();
-      loadInquiries();
-      showToast("Reset to sample inquiries completed!");
+      reloadInquiries();
+      showNotification("Reset to sample inquiries completed!");
     }
   };
+
+  // Avoid hydration mismatch
+  if (!hasMounted) {
+    return (
+      <div className="min-h-screen bg-[#111315] flex items-center justify-center text-white">
+        <div className="w-8 h-8 border-2 border-[#C2A476] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // KPIs
   const totalCount = inquiries.length;
@@ -188,7 +297,7 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              className="w-full bg-[#C2A476] hover:bg-[#aa8c5b] text-white py-3.5 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg mt-2"
+              className="w-full bg-[#C2A476] hover:bg-[#aa8c5b] text-white py-3.5 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg mt-2 cursor-pointer"
             >
               Unlock Dashboard
             </button>
@@ -207,22 +316,39 @@ export default function AdminPage() {
   // Authenticated Admin Dashboard
   return (
     <div className="min-h-screen bg-[#F8F6F2] text-neutral-900 pb-20">
-      {/* Toast Notification */}
+      {/* Toast Notification for Real-Time Booking Alert */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#14171A] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10 text-xs flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-[#C2A476]" />
-          <span>{toastMessage}</span>
+        <div className="fixed top-6 right-6 z-50 max-w-md bg-[#14171A] text-white p-4 rounded-2xl shadow-2xl border border-[#C2A476]/50 flex items-start gap-3.5 animate-bounce-short">
+          <div className="w-9 h-9 rounded-xl bg-[#C2A476]/20 border border-[#C2A476]/40 flex items-center justify-center flex-shrink-0 text-[#C2A476] mt-0.5">
+            <BellRing className="w-5 h-5 animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-xs text-white leading-tight">
+              {toastMessage.title}
+            </h4>
+            {toastMessage.subtitle && (
+              <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug">
+                {toastMessage.subtitle}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-neutral-400 hover:text-white p-1 text-xs"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* Admin Header */}
-      <header className="bg-[#14171A] text-white border-b border-white/10 sticky top-0 z-30">
+      <header className="bg-[#14171A] text-white border-b border-white/10 sticky top-0 z-30 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               href="/"
               className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-colors"
-              title="Return to Public Site"
+              title="Return to Public Website"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -235,16 +361,22 @@ export default function AdminPage() {
                   Admin Portal
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400">
-                Live Guest Inquiry Management
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-[11px] text-emerald-400 font-medium">
+                  Live Real-Time Sync Active (No refresh needed)
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleResetSample}
-              className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-colors flex items-center gap-1.5"
+              className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-colors flex items-center gap-1.5 cursor-pointer"
               title="Reset Sample Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -252,7 +384,7 @@ export default function AdminPage() {
             </button>
             <button
               onClick={handleLogout}
-              className="text-xs bg-white/10 hover:bg-white/20 text-neutral-200 px-4 py-1.5 rounded-lg transition-colors font-medium"
+              className="text-xs bg-white/10 hover:bg-white/20 text-neutral-200 px-4 py-1.5 rounded-lg transition-colors font-medium cursor-pointer"
             >
               Log Out
             </button>
@@ -262,6 +394,19 @@ export default function AdminPage() {
 
       {/* Dashboard Content */}
       <main className="max-w-7xl mx-auto px-6 pt-8">
+        {/* Real-time notification banner */}
+        <div className="mb-6 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800">
+          <div className="flex items-center gap-2.5">
+            <Radio className="w-4 h-4 text-emerald-600 animate-pulse flex-shrink-0" />
+            <span>
+              <strong>Instant Sync Connected:</strong> New bookings placed by visitors on the public site appear here immediately in real-time with sound and visual alerts — without pressing F5.
+            </span>
+          </div>
+          <span className="font-mono text-[10px] uppercase bg-emerald-200/60 px-2 py-0.5 rounded text-emerald-900 font-bold hidden md:inline">
+            AUTO-SYNC
+          </span>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
@@ -376,13 +521,26 @@ export default function AdminPage() {
         ) : (
           <div className="space-y-4">
             {filteredInquiries.map((inq) => {
+              const isNewlyArrived = inq.id === newlyArrivedId;
               const whatsappLink = `https://wa.me/${inq.phone.replace(/[^0-9]/g, "")}?text=Hello%20${encodeURIComponent(inq.guestName)},%20thank%20you%20for%20inquiring%20about%20${encodeURIComponent(inq.villaName)}%20(Ref:%20${inq.id}).`;
 
               return (
                 <div
                   key={inq.id}
-                  className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className={`bg-white rounded-2xl border p-5 shadow-sm transition-all duration-500 relative ${
+                    isNewlyArrived
+                      ? "border-[#C2A476] ring-4 ring-[#C2A476]/30 bg-amber-50/20"
+                      : "border-neutral-200 hover:shadow-md"
+                  }`}
                 >
+                  {/* Flashing Tag if just arrived via real-time sync */}
+                  {isNewlyArrived && (
+                    <div className="mb-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C2A476] text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Just Received (Real-Time Live)</span>
+                    </div>
+                  )}
+
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-100">
                     <div className="flex items-start sm:items-center gap-3">
                       <span className="font-mono text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-md">
@@ -434,7 +592,7 @@ export default function AdminPage() {
                       {/* Delete */}
                       <button
                         onClick={() => handleDelete(inq.id)}
-                        className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Delete Inquiry"
                       >
                         <Trash2 className="w-4 h-4" />
