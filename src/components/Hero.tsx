@@ -262,65 +262,69 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
           </a>
         </div>
 
-        {/* Floating Luxury Availability Bar */}
+        {/* Floating Luxury Availability Bar (100% Solid White Surface) */}
         <div
           ref={barRef}
-          className="mt-14 w-full max-w-4xl bg-white/95 backdrop-blur-xl text-neutral-900 rounded-2xl md:rounded-full p-4 md:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.35)] border border-white/30 relative z-40"
+          style={{ backgroundColor: "#ffffff" }}
+          className="mt-14 w-full max-w-4xl bg-white text-neutral-900 rounded-2xl md:rounded-full p-4 md:p-3 shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] relative z-40"
         >
           <form
             onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center"
           >
-            {/* 1. VILLA SELECTOR (Smooth Animated Luxury Popover) */}
+            {/* 1. VILLA SELECTOR (100% Solid White Popover) */}
             <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => setActiveDropdown((prev) => (prev === "villa" ? null : "villa"))}
-                className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-neutral-50/80 transition-all duration-200 text-left focus:outline-none group cursor-pointer"
+                className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 text-left focus:outline-none group cursor-pointer ${
+                  activeDropdown === "villa" ? "bg-[#FAF6EE] ring-1 ring-[#C2A476]/50" : "hover:bg-neutral-50"
+                }`}
                 aria-haspopup="listbox"
                 aria-expanded={activeDropdown === "villa"}
               >
-                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 group-hover:bg-[#f5ede0] transition-all">
+                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 transition-all">
                   <Home className="w-4 h-4" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 group-hover:text-[#A6834F] transition-colors">
+                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-600 group-hover:text-[#8A6B3D] transition-colors">
                     Select Sanctuary
                   </span>
-                  <span className="block text-xs sm:text-sm font-semibold text-neutral-900 truncate mt-0.5">
+                  <span className="block text-xs sm:text-sm font-bold text-neutral-900 truncate mt-0.5">
                     {selectedVillaData ? selectedVillaData.name : "All 4 Villas"}
                   </span>
                 </div>
 
                 <ChevronDown
                   className={`w-4 h-4 text-[#C2A476] transition-transform duration-300 flex-shrink-0 ${
-                    activeDropdown === "villa" ? "rotate-180 text-[#A6834F]" : "group-hover:translate-y-0.5"
+                    activeDropdown === "villa" ? "rotate-180 text-[#8A6B3D]" : "group-hover:translate-y-0.5"
                   }`}
                 />
               </button>
 
-              {/* Villa Dropdown Popover */}
+              {/* Villa Dropdown Popover (100% Solid White Background) */}
               <AnimatePresence>
                 {activeDropdown === "villa" && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 md:w-96 max-w-sm bg-white/98 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.22)] border border-[#E8E2D5] p-2 z-50 text-neutral-900 overflow-hidden"
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ backgroundColor: "#ffffff" }}
+                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 md:w-96 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 z-50 text-neutral-900 overflow-hidden"
                   >
                     {/* Header */}
-                    <div className="px-3 py-2 border-b border-neutral-100 flex items-center justify-between">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">
+                    <div className="px-3 py-2 bg-[#FAF7F2] border border-[#EAE2D5] rounded-xl mb-2 flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-wider font-bold text-neutral-700">
                         Choose Your Sanctuary
                       </span>
-                      <span className="text-[10px] font-semibold text-[#A6834F] bg-[#FAF6EE] px-2 py-0.5 rounded-full border border-[#E8E0D2]">
+                      <span className="text-[10px] font-bold text-[#8A6B3D] bg-white px-2 py-0.5 rounded-full border border-[#E8E0D2]">
                         4 Residences
                       </span>
                     </div>
 
-                    <div className="py-1 max-h-[360px] overflow-y-auto space-y-1">
+                    <div className="py-1 max-h-[360px] overflow-y-auto space-y-1.5">
                       {/* Option: All 4 Villas */}
                       <button
                         type="button"
@@ -328,10 +332,10 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                           setSelectedVilla("");
                           setActiveDropdown(null);
                         }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer ${
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer border ${
                           selectedVilla === ""
-                            ? "bg-[#FAF7F2] text-neutral-900 font-semibold ring-1 ring-[#C2A476]/30"
-                            : "hover:bg-[#FAF8F5] text-neutral-700"
+                            ? "bg-[#FAF7F2] border-[#C2A476] shadow-sm text-neutral-900 font-semibold"
+                            : "bg-white border-transparent hover:bg-[#FAF8F5] text-neutral-700"
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -339,17 +343,17 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             <Building2 className="w-5 h-5" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#A6834F] transition-colors">
+                            <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#8A6B3D] transition-colors text-neutral-900">
                               All 4 Villas
                             </p>
-                            <p className="text-[11px] text-neutral-400 truncate">
+                            <p className="text-[11px] text-neutral-600 truncate">
                               Son Tra & Ngu Hanh Son Sanctuaries
                             </p>
                           </div>
                         </div>
                         {selectedVilla === "" && (
-                          <div className="w-6 h-6 rounded-full bg-[#C2A476]/15 flex items-center justify-center text-[#A6834F] flex-shrink-0 ml-2">
-                            <Check className="w-3.5 h-3.5" />
+                          <div className="w-6 h-6 rounded-full bg-[#C2A476] flex items-center justify-center text-white flex-shrink-0 ml-2 shadow-sm">
+                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                           </div>
                         )}
                       </button>
@@ -365,36 +369,36 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                               setSelectedVilla(v.id);
                               setActiveDropdown(null);
                             }}
-                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer ${
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer border ${
                               isSelected
-                                ? "bg-[#FAF7F2] text-neutral-900 font-semibold ring-1 ring-[#C2A476]/40"
-                                : "hover:bg-[#FAF8F5] text-neutral-700"
+                                ? "bg-[#FAF7F2] border-[#C2A476] shadow-sm text-neutral-900 font-semibold"
+                                : "bg-white border-transparent hover:bg-[#FAF8F5] text-neutral-700"
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-11 h-11 rounded-xl overflow-hidden relative border border-[#EAE5DC] flex-shrink-0 shadow-sm bg-neutral-100">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-[#EAE5DC] flex-shrink-0 shadow-sm bg-neutral-100">
                                 <Image
                                   src={v.image}
                                   alt={v.name}
                                   fill
                                   className="object-cover group-hover:scale-110 transition-transform duration-300"
                                 />
-                                <div className="absolute top-0.5 left-0.5 bg-black/75 backdrop-blur-sm text-white text-[9px] font-bold px-1 rounded">
+                                <div className="absolute top-0.5 left-0.5 bg-black/85 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   {v.code}
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#A6834F] transition-colors">
+                                <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#8A6B3D] transition-colors text-neutral-900">
                                   {v.name}
                                 </p>
-                                <p className="text-[11px] text-neutral-400 truncate">
+                                <p className="text-[11px] text-neutral-600 truncate mt-0.5 font-medium">
                                   {v.district} • {v.bedrooms} PN • {v.poolType}
                                 </p>
                               </div>
                             </div>
                             {isSelected && (
-                              <div className="w-6 h-6 rounded-full bg-[#C2A476]/15 flex items-center justify-center text-[#A6834F] flex-shrink-0 ml-2">
-                                <Check className="w-3.5 h-3.5" />
+                              <div className="w-6 h-6 rounded-full bg-[#C2A476] flex items-center justify-center text-white flex-shrink-0 ml-2 shadow-sm">
+                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                               </div>
                             )}
                           </button>
@@ -406,28 +410,30 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
               </AnimatePresence>
             </div>
 
-            {/* 2. CHECK-IN DATE (Custom Luxury Animated Calendar) */}
+            {/* 2. CHECK-IN DATE (100% Solid White Popover) */}
             <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => openCalendar("checkIn")}
-                className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-neutral-50/80 transition-all duration-200 text-left focus:outline-none group cursor-pointer"
+                className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 text-left focus:outline-none group cursor-pointer ${
+                  activeDropdown === "checkIn" ? "bg-[#FAF6EE] ring-1 ring-[#C2A476]/50" : "hover:bg-neutral-50"
+                }`}
                 aria-haspopup="dialog"
                 aria-expanded={activeDropdown === "checkIn"}
               >
-                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 group-hover:bg-[#f5ede0] transition-all">
+                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 transition-all">
                   <CalendarIcon className="w-4 h-4" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 group-hover:text-[#A6834F] transition-colors">
+                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-600 group-hover:text-[#8A6B3D] transition-colors">
                     Check-in Date
                   </span>
                   <span
                     className={`block text-xs sm:text-sm truncate mt-0.5 ${
                       checkIn
-                        ? "font-semibold text-neutral-900"
-                        : "text-neutral-400 font-normal"
+                        ? "font-bold text-neutral-900"
+                        : "text-neutral-500 font-medium"
                     }`}
                   >
                     {checkIn ? formatDisplayDate(checkIn) : "Select Arrival"}
@@ -436,36 +442,37 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
 
                 <ChevronDown
                   className={`w-4 h-4 text-[#C2A476] transition-transform duration-300 flex-shrink-0 ${
-                    activeDropdown === "checkIn" ? "rotate-180 text-[#A6834F]" : "group-hover:translate-y-0.5"
+                    activeDropdown === "checkIn" ? "rotate-180 text-[#8A6B3D]" : "group-hover:translate-y-0.5"
                   }`}
                 />
               </button>
 
-              {/* Check-in Calendar Popover */}
+              {/* Check-in Calendar Popover (100% Solid White Background) */}
               <AnimatePresence>
                 {activeDropdown === "checkIn" && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-80 max-w-sm bg-white/98 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.22)] border border-[#E8E2D5] p-4 z-50 text-neutral-900"
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ backgroundColor: "#ffffff" }}
+                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
                   >
                     {/* Calendar Month Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-3 bg-[#FAF7F2] -m-4 mb-3 p-3.5 rounded-t-2xl">
                       <div>
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-[#A6834F] block">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-[#8A6B3D] block">
                           Check-in Date
                         </span>
-                        <h4 className="font-serif font-bold text-base text-neutral-900">
+                        <h4 className="font-serif font-bold text-lg text-neutral-900 leading-tight">
                           {MONTH_NAMES[calMonth]} {calYear}
                         </h4>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={handlePrevCalMonth}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-white hover:bg-neutral-100 border border-[#E2D9CC] text-neutral-800 transition-colors cursor-pointer shadow-sm"
                           aria-label="Previous month"
                         >
                           <ChevronLeft className="w-4 h-4" />
@@ -473,7 +480,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                         <button
                           type="button"
                           onClick={handleNextCalMonth}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-white hover:bg-neutral-100 border border-[#E2D9CC] text-neutral-800 transition-colors cursor-pointer shadow-sm"
                           aria-label="Next month"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -482,11 +489,11 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     </div>
 
                     {/* Weekday labels */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
                       {DAY_LABELS.map((label) => (
                         <span
                           key={label}
-                          className="text-[10px] font-bold text-neutral-400 py-1"
+                          className="text-xs font-bold text-neutral-600 py-1"
                         >
                           {label}
                         </span>
@@ -497,7 +504,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     <div className="grid grid-cols-7 gap-1 text-center">
                       {/* Empty leading slots */}
                       {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                        <div key={`empty-${i}`} className="h-8" />
+                        <div key={`empty-${i}`} className="h-9" />
                       ))}
 
                       {/* Day cells */}
@@ -514,14 +521,14 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             type="button"
                             disabled={isPast}
                             onClick={() => handleSelectCheckIn(dateStr)}
-                            className={`h-8 w-8 mx-auto rounded-xl text-xs font-medium flex items-center justify-center transition-all cursor-pointer ${
+                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
                                 : isPast
                                 ? "text-neutral-300 cursor-not-allowed"
                                 : isToday
-                                ? "border border-[#C2A476] text-[#A6834F] hover:bg-[#FAF6EE]"
-                                : "text-neutral-800 hover:bg-[#FAF6EE] hover:text-[#A6834F]"
+                                ? "border-2 border-[#C2A476] text-[#8A6B3D] hover:bg-[#FAF6EE] font-bold"
+                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D]"
                             }`}
                           >
                             {dayNum}
@@ -531,19 +538,19 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     </div>
 
                     {/* Quick Preset Shortcuts */}
-                    <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                      <div className="flex gap-1.5">
+                    <div className="mt-3.5 pt-3 border-t border-[#EAE2D5] flex items-center justify-between text-xs">
+                      <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => handleSelectCheckIn(todayStr)}
-                          className="px-2.5 py-1 rounded-lg bg-[#FAF6EE] text-[#A6834F] hover:bg-[#f5ede0] font-medium transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                         >
                           Today
                         </button>
                         <button
                           type="button"
                           onClick={() => handleSelectCheckIn(addDaysToString(todayStr, 1))}
-                          className="px-2.5 py-1 rounded-lg bg-[#FAF6EE] text-[#A6834F] hover:bg-[#f5ede0] font-medium transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                         >
                           Tomorrow
                         </button>
@@ -556,9 +563,9 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             setCheckIn("");
                             setActiveDropdown(null);
                           }}
-                          className="text-neutral-400 hover:text-rose-500 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="text-neutral-500 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer font-medium"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                           <span>Clear</span>
                         </button>
                       )}
@@ -568,28 +575,30 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
               </AnimatePresence>
             </div>
 
-            {/* 3. CHECK-OUT DATE (Custom Luxury Animated Calendar) */}
+            {/* 3. CHECK-OUT DATE (100% Solid White Popover) */}
             <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => openCalendar("checkOut")}
-                className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-neutral-50/80 transition-all duration-200 text-left focus:outline-none group cursor-pointer"
+                className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 text-left focus:outline-none group cursor-pointer ${
+                  activeDropdown === "checkOut" ? "bg-[#FAF6EE] ring-1 ring-[#C2A476]/50" : "hover:bg-neutral-50"
+                }`}
                 aria-haspopup="dialog"
                 aria-expanded={activeDropdown === "checkOut"}
               >
-                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 group-hover:bg-[#f5ede0] transition-all">
+                <div className="w-9 h-9 rounded-xl bg-[#FAF6EE] border border-[#E8E0D2] flex items-center justify-center text-[#C2A476] flex-shrink-0 group-hover:scale-105 transition-all">
                   <CalendarIcon className="w-4 h-4" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 group-hover:text-[#A6834F] transition-colors">
+                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-600 group-hover:text-[#8A6B3D] transition-colors">
                     Check-out Date
                   </span>
                   <span
                     className={`block text-xs sm:text-sm truncate mt-0.5 ${
                       checkOut
-                        ? "font-semibold text-neutral-900"
-                        : "text-neutral-400 font-normal"
+                        ? "font-bold text-neutral-900"
+                        : "text-neutral-500 font-medium"
                     }`}
                   >
                     {checkOut ? formatDisplayDate(checkOut) : "Select Departure"}
@@ -598,36 +607,37 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
 
                 <ChevronDown
                   className={`w-4 h-4 text-[#C2A476] transition-transform duration-300 flex-shrink-0 ${
-                    activeDropdown === "checkOut" ? "rotate-180 text-[#A6834F]" : "group-hover:translate-y-0.5"
+                    activeDropdown === "checkOut" ? "rotate-180 text-[#8A6B3D]" : "group-hover:translate-y-0.5"
                   }`}
                 />
               </button>
 
-              {/* Check-out Calendar Popover */}
+              {/* Check-out Calendar Popover (100% Solid White Background) */}
               <AnimatePresence>
                 {activeDropdown === "checkOut" && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute left-0 sm:left-auto md:right-0 md:left-auto top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-80 max-w-sm bg-white/98 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.22)] border border-[#E8E2D5] p-4 z-50 text-neutral-900"
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ backgroundColor: "#ffffff" }}
+                    className="absolute left-0 sm:left-auto md:right-0 md:left-auto top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
                   >
                     {/* Calendar Month Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-3 bg-[#FAF7F2] -m-4 mb-3 p-3.5 rounded-t-2xl">
                       <div>
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-[#A6834F] block">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-[#8A6B3D] block">
                           Check-out Date
                         </span>
-                        <h4 className="font-serif font-bold text-base text-neutral-900">
+                        <h4 className="font-serif font-bold text-lg text-neutral-900 leading-tight">
                           {MONTH_NAMES[calMonth]} {calYear}
                         </h4>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={handlePrevCalMonth}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-white hover:bg-neutral-100 border border-[#E2D9CC] text-neutral-800 transition-colors cursor-pointer shadow-sm"
                           aria-label="Previous month"
                         >
                           <ChevronLeft className="w-4 h-4" />
@@ -635,7 +645,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                         <button
                           type="button"
                           onClick={handleNextCalMonth}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-white hover:bg-neutral-100 border border-[#E2D9CC] text-neutral-800 transition-colors cursor-pointer shadow-sm"
                           aria-label="Next month"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -644,11 +654,11 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     </div>
 
                     {/* Weekday labels */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
                       {DAY_LABELS.map((label) => (
                         <span
                           key={label}
-                          className="text-[10px] font-bold text-neutral-400 py-1"
+                          className="text-xs font-bold text-neutral-600 py-1"
                         >
                           {label}
                         </span>
@@ -659,7 +669,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     <div className="grid grid-cols-7 gap-1 text-center">
                       {/* Empty leading slots */}
                       {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                        <div key={`empty-${i}`} className="h-8" />
+                        <div key={`empty-${i}`} className="h-9" />
                       ))}
 
                       {/* Day cells */}
@@ -676,12 +686,12 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             type="button"
                             disabled={isPast}
                             onClick={() => handleSelectCheckOut(dateStr)}
-                            className={`h-8 w-8 mx-auto rounded-xl text-xs font-medium flex items-center justify-center transition-all cursor-pointer ${
+                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
                                 : isPast
                                 ? "text-neutral-300 cursor-not-allowed"
-                                : "text-neutral-800 hover:bg-[#FAF6EE] hover:text-[#A6834F]"
+                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D]"
                             }`}
                           >
                             {dayNum}
@@ -691,34 +701,34 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     </div>
 
                     {/* Quick Preset Shortcuts */}
-                    <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                      <div className="flex gap-1.5">
+                    <div className="mt-3.5 pt-3 border-t border-[#EAE2D5] flex items-center justify-between text-xs">
+                      <div className="flex gap-2">
                         {checkIn ? (
                           <>
                             <button
                               type="button"
                               onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 2))}
-                              className="px-2 py-1 rounded-lg bg-[#FAF6EE] text-[#A6834F] hover:bg-[#f5ede0] font-medium transition-colors cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +2 Nights
                             </button>
                             <button
                               type="button"
                               onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 3))}
-                              className="px-2 py-1 rounded-lg bg-[#FAF6EE] text-[#A6834F] hover:bg-[#f5ede0] font-medium transition-colors cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +3 Nights
                             </button>
                             <button
                               type="button"
                               onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 5))}
-                              className="px-2 py-1 rounded-lg bg-[#FAF6EE] text-[#A6834F] hover:bg-[#f5ede0] font-medium transition-colors cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +5 Nights
                             </button>
                           </>
                         ) : (
-                          <span className="text-neutral-400 italic">
+                          <span className="text-neutral-500 font-medium italic">
                             Select check-in first
                           </span>
                         )}
@@ -731,9 +741,9 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             setCheckOut("");
                             setActiveDropdown(null);
                           }}
-                          className="text-neutral-400 hover:text-rose-500 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="text-neutral-500 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer font-medium"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                           <span>Clear</span>
                         </button>
                       )}
