@@ -233,7 +233,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
   const firstDayOfWeek = new Date(calYear, calMonth, 1).getDay();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-[#0d0f12] text-white z-30">
+    <section className="relative min-h-[100dvh] flex items-center justify-center bg-[#0d0f12] text-white z-30 overflow-x-hidden">
       {/* Background Hero Image Slides with Smooth Cross-fade (Overflow clipped strictly here) */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {HERO_SLIDES.map((slide, index) => (
@@ -258,35 +258,35 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
       </div>
 
       {/* Hero Content */}
-      <div className="relative z-30 max-w-5xl mx-auto px-6 pt-32 pb-36 text-center flex flex-col items-center">
+      <div className="relative z-30 max-w-5xl mx-auto px-4 sm:px-6 md:px-12 pt-32 sm:pt-36 md:pt-40 pb-20 sm:pb-28 md:pb-36 text-center flex flex-col items-center">
         {/* Subtle Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#EAE4D7] text-xs uppercase tracking-[0.2em] mb-6 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#EAE4D7] text-xs uppercase tracking-[0.2em] mb-4 sm:mb-6 shadow-sm">
           <Sparkles className="w-3.5 h-3.5 text-[#C2A476]" />
           <span>Exclusive Private Sanctuaries</span>
         </div>
 
         {/* Headline */}
-        <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-light tracking-tight leading-[1.1] text-white max-w-4xl drop-shadow-md">
+        <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.15] sm:leading-[1.1] text-white max-w-4xl drop-shadow-md">
           A Symphony of <span className="italic font-normal text-[#C2A476]">Light, Water</span> & Architectural Serenity
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-6 text-base sm:text-lg md:text-xl text-neutral-300 font-light max-w-2xl leading-relaxed">
+        <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg lg:text-xl text-neutral-300 font-light max-w-2xl leading-relaxed">
           Four private, architecturally designed pool villas across Da Nang&apos;s coveted Son Tra and Ngu Hanh Son coastlines. Dedicated to absolute tranquility.
         </p>
 
         {/* Quick CTA Buttons */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
           <a
             href="#villas"
-            className="inline-flex items-center gap-2 bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs md:text-sm uppercase tracking-widest font-semibold px-8 py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs md:text-sm uppercase tracking-widest font-semibold px-8 py-3.5 sm:py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
           >
             <span>Explore The 4 Villas</span>
             <ArrowRight className="w-4 h-4" />
           </a>
           <a
             href="#experience"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs md:text-sm uppercase tracking-widest font-medium px-8 py-4 rounded-full transition-all duration-300 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs md:text-sm uppercase tracking-widest font-medium px-8 py-3.5 sm:py-4 rounded-full transition-all duration-300 cursor-pointer"
           >
             <span>The Villa Lifestyle</span>
           </a>
@@ -296,14 +296,14 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
         <div
           ref={barRef}
           style={{ backgroundColor: "#ffffff" }}
-          className="mt-14 w-full max-w-4xl bg-white text-neutral-900 rounded-2xl md:rounded-full p-4 md:p-3 shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] relative z-40"
+          className="mt-8 sm:mt-12 md:mt-14 w-full max-w-4xl bg-white text-neutral-900 rounded-3xl md:rounded-full p-3 sm:p-4 md:p-3 shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] relative z-40"
         >
           <form
             onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center"
+            className="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 items-center"
           >
             {/* 1. VILLA SELECTOR (100% Solid White Popover) */}
-            <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
+            <div className="relative px-2 py-1 sm:px-3 sm:py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => setActiveDropdown((prev) => (prev === "villa" ? null : "villa"))}
@@ -342,7 +342,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
-                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 md:w-96 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 z-50 text-neutral-900 overflow-hidden"
+                    className="absolute left-0 right-0 sm:right-auto sm:left-0 sm:w-84 md:w-96 top-[calc(100%+10px)] bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 z-50 text-neutral-900 overflow-hidden"
                   >
                     {/* Header */}
                     <div className="px-3 py-2 bg-[#FAF7F2] border border-[#EAE2D5] rounded-xl mb-2 flex items-center justify-between">
@@ -441,7 +441,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             </div>
 
             {/* 2. CHECK-IN DATE (With Real-Time Booked Dates Lock) */}
-            <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
+            <div className="relative px-2 py-1 sm:px-3 sm:py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => openCalendar("checkIn")}
@@ -486,7 +486,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
-                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-88 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
+                    className="absolute left-0 right-0 sm:right-auto sm:left-0 sm:w-84 md:w-88 top-[calc(100%+10px)] bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 sm:p-4 z-50 text-neutral-900 overflow-hidden"
                   >
                     {/* Calendar Month Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-2.5 bg-[#FAF7F2] -m-4 mb-2.5 p-3.5 rounded-t-2xl">
@@ -659,7 +659,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             </div>
 
             {/* 3. CHECK-OUT DATE (With Conflict Verification) */}
-            <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
+            <div className="relative px-2 py-1 sm:px-3 sm:py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
                 onClick={() => openCalendar("checkOut")}
@@ -704,7 +704,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
-                    className="absolute left-0 sm:left-auto md:right-0 md:left-auto top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-88 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
+                    className="absolute left-0 right-0 sm:left-auto sm:right-0 md:right-0 md:left-auto sm:w-84 md:w-88 top-[calc(100%+10px)] bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 sm:p-4 z-50 text-neutral-900 overflow-hidden"
                   >
                     {/* Calendar Month Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-2.5 bg-[#FAF7F2] -m-4 mb-2.5 p-3.5 rounded-t-2xl">
@@ -889,10 +889,10 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             </div>
 
             {/* 4. SUBMIT CTA BUTTON */}
-            <div className="px-2">
+            <div className="px-2 pt-1 md:pt-0">
               <button
                 type="submit"
-                className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 px-6 rounded-xl md:rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 sm:py-4 px-6 rounded-2xl md:rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Check Dates</span>
                 <ArrowRight className="w-4 h-4 text-[#C2A476] group-hover:text-white group-hover:translate-x-1 transition-all" />
@@ -902,9 +902,9 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
         </div>
       </div>
 
-      {/* Bottom Corner Slide Controls */}
-      <div className="hidden sm:flex absolute bottom-8 right-8 z-30 items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-xs">
-        <span className="text-[11px] text-neutral-400">
+      {/* Bottom Corner Slide Controls (Positioned on the left so it never collides with Floating WhatsApp) */}
+      <div className="hidden md:flex absolute bottom-8 left-8 lg:left-12 z-30 items-center gap-3 bg-black/45 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-xs">
+        <span className="text-[11px] text-neutral-300">
           {HERO_SLIDES[currentSlide].title}
         </span>
         <div className="flex items-center gap-1">

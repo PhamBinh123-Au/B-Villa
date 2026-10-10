@@ -12,12 +12,15 @@ html {
   font-family: var(--font-sans);
   background-color: #0d0f12;
   color: #1a1d20;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
   background-color: #FAF8F5;
   color: #14171A;
   overflow-x: hidden;
+  width: 100%;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }

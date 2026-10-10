@@ -145,15 +145,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-[#EAE5DC] overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-[#EAE5DC] overflow-visible my-auto sm:my-8">
         {/* Header Bar */}
-        <div className="bg-[#14171A] text-white px-6 py-5 flex items-center justify-between border-b border-white/10">
+        <div className="bg-[#14171A] text-white px-5 sm:px-6 py-4 sm:py-5 flex items-center justify-between border-b border-white/10 rounded-t-3xl">
           <div>
             <span className="text-[10px] uppercase tracking-[0.25em] text-[#C2A476] font-semibold">
               Direct Reservation Inquiry
             </span>
-            <h3 className="font-serif text-xl sm:text-2xl font-light text-white">
+            <h3 className="font-serif text-lg sm:text-2xl font-light text-white">
               Reserve Your Sanctuary
             </h3>
           </div>
@@ -167,7 +167,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8">
+        <div className="p-4 sm:p-8">
           {submittedInquiryId ? (
             /* Success Confirmation State */
             <div className="text-center py-8 px-4 animate-fade-in">

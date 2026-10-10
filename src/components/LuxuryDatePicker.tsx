@@ -229,7 +229,9 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             style={{ backgroundColor: "#ffffff" }}
-            className="absolute left-0 right-0 sm:left-auto sm:right-auto sm:w-80 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
+            className={`absolute left-0 right-0 ${
+              isCheckOut ? "sm:left-auto sm:right-0" : "sm:right-auto sm:left-0"
+            } sm:w-80 top-[calc(100%+8px)] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border-2 border-[#E2D9CC] p-3.5 sm:p-4 z-50 text-neutral-900`}
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-2.5 bg-[#FAF7F2] -m-4 mb-2.5 p-3 rounded-t-2xl">
