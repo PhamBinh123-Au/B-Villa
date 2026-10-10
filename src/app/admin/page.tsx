@@ -585,81 +585,121 @@ export default function AdminPage() {
           </span>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8">
-          <div className="bg-white p-4.5 rounded-2xl border border-neutral-200 shadow-sm">
-            <div className="flex items-center justify-between text-neutral-500 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">
+        {/* KPI Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5 mb-8">
+          {/* 1. Total Inquiries */}
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#EAE5DC] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[140px] group">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                 Total Inquiries
               </span>
-              <Calendar className="w-4 h-4 text-neutral-400" />
+              <div className="w-9 h-9 rounded-2xl bg-[#FAF8F5] border border-[#EAE5DC] text-[#8A6B3D] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <Calendar className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-serif font-bold text-neutral-900">
-              {totalCount}
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-serif font-bold text-neutral-900">
+                {totalCount}
+              </p>
+            </div>
+            <p className="text-[11px] text-neutral-400 font-light truncate">
+              All guest submissions
             </p>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
-            <div className="flex items-center justify-between text-amber-700 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">
+          {/* 2. Pending Action */}
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#EAE5DC] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[140px] group hover:border-amber-300">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
                 Pending Action
               </span>
-              <Clock className="w-4 h-4 text-amber-500" />
+              <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-serif font-bold text-amber-600">
-              {pendingCount}
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-serif font-bold text-amber-600">
+                {pendingCount}
+              </p>
+            </div>
+            <p className="text-[11px] text-amber-600/80 font-medium truncate">
+              {pendingCount > 0 ? "Requires concierge reply" : "All caught up"}
             </p>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-            <div className="flex items-center justify-between text-blue-700 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">
+          {/* 3. Contacted */}
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#EAE5DC] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[140px] group hover:border-blue-300">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
                 Contacted
               </span>
-              <PhoneCall className="w-4 h-4 text-blue-500" />
+              <div className="w-9 h-9 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <PhoneCall className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-serif font-bold text-blue-600">
-              {contactedCount}
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-serif font-bold text-blue-600">
+                {contactedCount}
+              </p>
+            </div>
+            <p className="text-[11px] text-blue-600/80 font-medium truncate">
+              In direct communication
             </p>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-            <div className="flex items-center justify-between text-emerald-700 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">
+          {/* 4. Confirmed */}
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#EAE5DC] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[140px] group hover:border-emerald-300">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
                 Confirmed
               </span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-serif font-bold text-emerald-600">
-              {confirmedCount}
+            <div className="my-2">
+              <p className="text-3xl sm:text-4xl font-serif font-bold text-emerald-600">
+                {confirmedCount}
+              </p>
+            </div>
+            <p className="text-[11px] text-emerald-600/80 font-medium truncate">
+              Booked & dates secured
             </p>
           </div>
 
-          <div className={`p-4.5 rounded-2xl border shadow-sm relative overflow-hidden transition-all ${
+          {/* 5. Under Maintenance */}
+          <div className={`p-5 sm:p-6 rounded-3xl border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[140px] group ${
             maintenanceCount > 0
-              ? "bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20"
-              : "bg-white border-neutral-200"
+              ? "bg-[#FFFBF5] border-amber-300 ring-2 ring-amber-400/20"
+              : "bg-white border-[#EAE5DC]"
           }`}>
-            <div className={`absolute top-0 left-0 right-0 h-1 ${
-              maintenanceCount > 0 ? "bg-amber-500" : "bg-neutral-300"
-            }`} />
-            <div className="flex items-center justify-between text-neutral-600 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">
-                Under Maintenance
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                maintenanceCount > 0 ? "text-amber-800" : "text-neutral-500"
+              }`}>
+                Maintenance
               </span>
-              <Wrench className={`w-4 h-4 ${maintenanceCount > 0 ? "text-amber-600 animate-pulse" : "text-neutral-400"}`} />
+              <div className={`w-9 h-9 rounded-2xl border flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${
+                maintenanceCount > 0
+                  ? "bg-amber-100 border-amber-300 text-amber-700"
+                  : "bg-neutral-50 border-neutral-200 text-neutral-400"
+              }`}>
+                <Wrench className={`w-4 h-4 ${maintenanceCount > 0 ? "animate-pulse" : ""}`} />
+              </div>
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <p className={`text-2xl sm:text-3xl font-serif font-bold ${
-                maintenanceCount > 0 ? "text-amber-700" : "text-neutral-700"
+            <div className="my-2 flex items-baseline gap-2">
+              <p className={`text-3xl sm:text-4xl font-serif font-bold ${
+                maintenanceCount > 0 ? "text-amber-700" : "text-neutral-900"
               }`}>
                 {maintenanceCount}
               </p>
               <span className="text-xs text-neutral-400 font-medium">/ 4 Villas</span>
             </div>
+            <p className={`text-[11px] font-medium truncate ${
+              maintenanceCount > 0 ? "text-amber-700" : "text-neutral-400"
+            }`}>
+              {maintenanceCount > 0 ? `${maintenanceCount} villa locked from booking` : "All 4 villas operational"}
+            </p>
           </div>
         </div>
 
