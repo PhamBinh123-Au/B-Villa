@@ -10,22 +10,22 @@ import { SiteConfig } from "@/types";
  */
 export const siteConfig: SiteConfig = {
   // BRANDING
-  name: "Serene Da Nang Villa Collection",
+  name: "B Villa Da Nang",
   tagline: "Curated Coastal Sanctuaries in Da Nang",
   description:
     "Discover an exceptional collection of private pool villas designed with contemporary minimalism, pure architectural light, and bespoke hospitality in Da Nang.",
 
   // CONTACT INFORMATION
   contact: {
-    phone: "+84 905 123 456", // Your Hotline
+    phone: "+84 854252821", // Your Hotline
     whatsapp: "https://wa.me/84905123456", // WhatsApp Direct Link
-    email: "reservations@serenedanangvillas.com", // Inquiries Email
+    email: "reservations@bvilladanang.com", // Inquiries Email
     address: "Son Tra & Ngu Hanh Son Districts, Da Nang City, Vietnam",
   },
 
   // ADMIN PORTAL PASSCODE (Used to unlock /admin dashboard)
   admin: {
-    passcode: "admin123", // Change this to your preferred secret passcode
+    passcode: "12345", // Change this to your preferred secret passcode
   },
 
   // SOCIAL MEDIA CHANNELS

@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { siteConfig } from "@/config/siteConfig";
 import { Villa } from "@/types";
 import { bookingStore } from "@/lib/bookingStore";
-import { X, Calendar, Users, Mail, Phone, User, CheckCircle2, Sparkles, MessageCircle } from "lucide-react";
+import {
+  X,
+  Calendar,
+  Users,
+  Mail,
+  Phone,
+  User,
+  CheckCircle2,
+  Sparkles,
+  MessageCircle,
+  ChevronDown,
+  Check,
+  Home,
+} from "lucide-react";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -20,6 +35,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   initialDates,
 }) => {
   const [villaId, setVillaId] = useState<string>("");
+  const [isVillaSelectOpen, setIsVillaSelectOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,6 +46,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedInquiryId, setSubmittedInquiryId] = useState<string | null>(null);
+
+  const modalSelectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (preSelectedVilla) {
@@ -42,6 +60,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     if (initialDates?.checkOut) setCheckOut(initialDates.checkOut);
     if (initialDates?.guests) setAdults(initialDates.guests);
   }, [preSelectedVilla, initialDates, isOpen]);
+
+  // Click outside listener for modal villa selector
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modalSelectRef.current && !modalSelectRef.current.contains(e.target as Node)) {
+        setIsVillaSelectOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -98,7 +129,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+            className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -146,14 +177,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   href={`${siteConfig.contact.whatsapp}?text=Hello!%20I%20just%20submitted%20inquiry%20${submittedInquiryId}%20for%20${encodeURIComponent(currentVilla.name)}.`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fb355] text-white py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all shadow-md"
+                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fb355] text-white py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all shadow-md cursor-pointer"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>Chat on WhatsApp Now</span>
                 </a>
                 <button
                   onClick={handleReset}
-                  className="inline-flex items-center justify-center bg-[#14171A] hover:bg-neutral-800 text-white py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all"
+                  className="inline-flex items-center justify-center bg-[#14171A] hover:bg-neutral-800 text-white py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
                 >
                   Done
                 </button>
@@ -162,24 +193,107 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           ) : (
             /* Booking Form */
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Villa Selection */}
-              <div>
+              {/* Custom Luxury Villa Selector */}
+              <div ref={modalSelectRef} className="relative">
                 <label className="block text-xs uppercase font-semibold tracking-wider text-neutral-700 mb-2">
                   Select Villa Residence
                 </label>
-                <select
-                  value={villaId}
-                  onChange={(e) => setVillaId(e.target.value)}
-                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476] transition-all"
-                  required
+
+                {/* Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsVillaSelectOpen((prev) => !prev)}
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 hover:border-[#C2A476] rounded-2xl p-3 text-left flex items-center justify-between transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#C2A476]/30 cursor-pointer group"
                 >
-                  {siteConfig.villas.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} — {v.poolType} ({v.district})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-neutral-500 mt-1 italic">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden relative border border-[#EAE5DC] flex-shrink-0 bg-neutral-100 shadow-sm">
+                      <Image
+                        src={currentVilla.image}
+                        alt={currentVilla.name}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute top-0.5 left-0.5 bg-black/75 backdrop-blur-sm text-white text-[9px] font-bold px-1 rounded">
+                        {currentVilla.code}
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-xs sm:text-sm font-semibold text-neutral-900 truncate">
+                        {currentVilla.name}
+                      </span>
+                      <span className="block text-[11px] text-neutral-500 truncate mt-0.5">
+                        {currentVilla.poolType} • {currentVilla.district}
+                      </span>
+                    </div>
+                  </div>
+
+                  <ChevronDown
+                    className={`w-4 h-4 text-[#C2A476] transition-transform duration-300 flex-shrink-0 ml-2 ${
+                      isVillaSelectOpen ? "rotate-180" : "group-hover:translate-y-0.5"
+                    }`}
+                  />
+                </button>
+
+                {/* Animated Dropdown Menu */}
+                <AnimatePresence>
+                  {isVillaSelectOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-[#EAE5DC] p-2 z-50 text-neutral-900 max-h-[290px] overflow-y-auto space-y-1"
+                    >
+                      {siteConfig.villas.map((v) => {
+                        const isSelected = v.id === currentVilla.id;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              setVillaId(v.id);
+                              setIsVillaSelectOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer ${
+                              isSelected
+                                ? "bg-[#FAF7F2] text-neutral-900 font-semibold ring-1 ring-[#C2A476]/40"
+                                : "hover:bg-[#FAF8F5] text-neutral-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl overflow-hidden relative border border-[#EAE5DC] flex-shrink-0 shadow-sm bg-neutral-100">
+                                <Image
+                                  src={v.image}
+                                  alt={v.name}
+                                  fill
+                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <div className="absolute top-0.5 left-0.5 bg-black/75 backdrop-blur-sm text-white text-[9px] font-bold px-1 rounded">
+                                  {v.code}
+                                </div>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#A6834F] transition-colors">
+                                  {v.name}
+                                </p>
+                                <p className="text-[11px] text-neutral-400 truncate">
+                                  {v.district} • {v.bedrooms} PN • {v.poolType}
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="w-6 h-6 rounded-full bg-[#C2A476]/15 flex items-center justify-center text-[#A6834F] flex-shrink-0 ml-2">
+                                <Check className="w-3.5 h-3.5" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <p className="text-[11px] text-neutral-500 mt-1.5 italic">
                   Max capacity: {currentVilla.maxGuests} guests • {currentVilla.bedrooms} En-suite Bedrooms
                 </p>
               </div>
@@ -239,7 +353,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <input
                     type="number"
                     min="0"
-                    max="6"
+                    max={6}
                     value={children}
                     onChange={(e) => setChildren(Number(e.target.value))}
                     className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
@@ -313,7 +427,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50"
+                  className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-[#C2A476] group-hover:text-white" />
                   <span>{isSubmitting ? "Submitting Inquiry..." : "Submit Reservation Inquiry"}</span>
