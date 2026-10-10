@@ -20,7 +20,7 @@ export const siteConfig: SiteConfig = {
     phone: "+84 854252821", // Your Hotline
     whatsapp: "https://wa.me/84905123456", // WhatsApp Direct Link
     email: "reservations@bvilladanang.com", // Inquiries Email
-    address: "Son Tra & Ngu Hanh Son Districts, Da Nang City, Vietnam",
+    address: "60 Thanh Vinh 3, Tho Quang, Son Tra District, Da Nang, Vietnam", // Physical Address
   },
 
   // ADMIN PORTAL PASSCODE (Used to unlock /admin dashboard)

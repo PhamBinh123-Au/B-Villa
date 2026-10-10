@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Check,
   Home,
+  AlertCircle,
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -77,6 +78,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   if (!isOpen) return null;
 
   const currentVilla = siteConfig.villas.find((v) => v.id === villaId) || siteConfig.villas[0];
+
+  const conflict =
+    checkIn && checkOut && currentVilla
+      ? bookingStore.hasDateConflict(checkIn, checkOut, currentVilla.id)
+      : undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -422,15 +428,34 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 />
               </div>
 
+              {/* Conflict Warning if Dates Already Booked */}
+              {conflict && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Villa Already Reserved On These Dates</p>
+                    <p className="text-[11px] text-rose-600 mt-0.5 leading-relaxed">
+                      {currentVilla.name} is already booked from <span className="font-semibold">{conflict.checkIn}</span> to <span className="font-semibold">{conflict.checkOut}</span>. Please choose different dates or select another villa.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Submit CTA */}
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
+                  disabled={isSubmitting || !!conflict}
+                  className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-[#C2A476] group-hover:text-white" />
-                  <span>{isSubmitting ? "Submitting Inquiry..." : "Submit Reservation Inquiry"}</span>
+                  <span>
+                    {conflict
+                      ? "Dates Unavailable — Choose Other Dates"
+                      : isSubmitting
+                      ? "Submitting Inquiry..."
+                      : "Submit Reservation Inquiry"}
+                  </span>
                 </button>
                 <p className="text-[11px] text-center text-neutral-400 mt-2">
                   No payment required now. Our team will verify availability and confirm within 1 hour.

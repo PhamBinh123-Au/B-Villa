@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { siteConfig } from "@/config/siteConfig";
+import { bookingStore } from "@/lib/bookingStore";
 import {
   Sparkles,
   Calendar as CalendarIcon,
@@ -15,6 +16,8 @@ import {
   Check,
   Building2,
   X,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 
 interface HeroProps {
@@ -95,6 +98,9 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [calYear, setCalYear] = useState(() => new Date().getFullYear());
 
+  // Version counter to force re-render when bookings change in real-time
+  const [bookingsVersion, setBookingsVersion] = useState(0);
+
   const barRef = useRef<HTMLDivElement>(null);
 
   const todayStr = getTodayString();
@@ -105,6 +111,16 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 6000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Listen to real-time booking changes from Admin or other tabs
+  useEffect(() => {
+    const unsubscribe = bookingStore.subscribe(() => {
+      setBookingsVersion((v) => v + 1);
+    });
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Close all popovers when clicking outside or pressing Escape
@@ -166,7 +182,9 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
     setCheckIn(dateStr);
     // If checkOut is earlier or equal to new checkIn, automatically set checkOut = checkIn + 1 day
     if (!checkOut || checkOut <= dateStr) {
-      setCheckOut(addDaysToString(dateStr, 1));
+      const nextDay = addDaysToString(dateStr, 1);
+      // Ensure next day is valid
+      setCheckOut(nextDay);
     }
     // Automatically transition to Check-Out calendar smoothly
     setActiveDropdown("checkOut");
@@ -180,6 +198,18 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveDropdown(null);
+
+    // If dates are chosen for a specific villa, verify no conflict
+    if (selectedVilla && checkIn && checkOut) {
+      const conflict = bookingStore.hasDateConflict(checkIn, checkOut, selectedVilla);
+      if (conflict) {
+        alert(
+          `These dates are already reserved for this villa (${conflict.checkIn} - ${conflict.checkOut}). Please select available dates marked in green/white.`
+        );
+        return;
+      }
+    }
+
     onCheckAvailability({
       villaId: selectedVilla || undefined,
       checkIn: checkIn || undefined,
@@ -310,7 +340,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
                     className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 md:w-96 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-3 z-50 text-neutral-900 overflow-hidden"
                   >
@@ -410,7 +440,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
               </AnimatePresence>
             </div>
 
-            {/* 2. CHECK-IN DATE (100% Solid White Popover) */}
+            {/* 2. CHECK-IN DATE (With Real-Time Booked Dates Lock) */}
             <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
@@ -447,19 +477,19 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                 />
               </button>
 
-              {/* Check-in Calendar Popover (100% Solid White Background) */}
+              {/* Check-in Calendar Popover */}
               <AnimatePresence>
                 {activeDropdown === "checkIn" && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
-                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
+                    className="absolute left-0 sm:left-auto md:left-0 top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-88 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
                   >
                     {/* Calendar Month Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-3 bg-[#FAF7F2] -m-4 mb-3 p-3.5 rounded-t-2xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-2.5 bg-[#FAF7F2] -m-4 mb-2.5 p-3.5 rounded-t-2xl">
                       <div>
                         <span className="text-[10px] uppercase tracking-wider font-bold text-[#8A6B3D] block">
                           Check-in Date
@@ -488,8 +518,36 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                       </div>
                     </div>
 
+                    {/* Availability Legend */}
+                    <div className="flex items-center justify-between text-[10px] text-neutral-600 py-1.5 px-2 bg-[#FAF8F5] rounded-lg mb-2 border border-[#EAE2D5]">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                        <span>Available</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#F43F5E]" />
+                        <span>Booked</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#C2A476]" />
+                        <span>Selected</span>
+                      </span>
+                    </div>
+
+                    {/* Villa-specific availability indicator message */}
+                    {selectedVilla ? (
+                      <p className="text-[10px] text-[#8A6B3D] font-medium mb-2 px-1 flex items-center gap-1">
+                        <Info className="w-3 h-3 flex-shrink-0" />
+                        <span>Checking availability for {selectedVillaData?.name}</span>
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-neutral-500 mb-2 px-1">
+                        Select a specific villa to see exact reserved dates.
+                      </p>
+                    )}
+
                     {/* Weekday labels */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
                       {DAY_LABELS.map((label) => (
                         <span
                           key={label}
@@ -515,23 +573,39 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                         const isSelected = dateStr === checkIn;
                         const isToday = dateStr === todayStr;
 
+                        // Check real-time booked status
+                        const bookedInfo = bookingStore.isDateBooked(dateStr, selectedVilla);
+                        const isBooked = bookedInfo.isBooked;
+
                         return (
                           <button
                             key={dateStr}
                             type="button"
-                            disabled={isPast}
+                            disabled={isPast || isBooked}
                             onClick={() => handleSelectCheckIn(dateStr)}
-                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                            title={
+                              isBooked
+                                ? `Already Booked: ${bookedInfo.villaNames.join(", ")}`
+                                : isPast
+                                ? "Past Date"
+                                : "Available to Book"
+                            }
+                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all relative ${
                               isSelected
                                 ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
+                                : isBooked
+                                ? "bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-75"
                                 : isPast
-                                ? "text-neutral-300 cursor-not-allowed"
+                                ? "text-neutral-300 cursor-not-allowed opacity-40"
                                 : isToday
-                                ? "border-2 border-[#C2A476] text-[#8A6B3D] hover:bg-[#FAF6EE] font-bold"
-                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D]"
+                                ? "border-2 border-[#C2A476] text-[#8A6B3D] hover:bg-[#FAF6EE] font-bold cursor-pointer"
+                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D] cursor-pointer"
                             }`}
                           >
                             {dayNum}
+                            {isBooked && (
+                              <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            )}
                           </button>
                         );
                       })}
@@ -542,14 +616,23 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() => handleSelectCheckIn(todayStr)}
+                          onClick={() => {
+                            if (!bookingStore.isDateBooked(todayStr, selectedVilla).isBooked) {
+                              handleSelectCheckIn(todayStr);
+                            }
+                          }}
                           className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                         >
                           Today
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleSelectCheckIn(addDaysToString(todayStr, 1))}
+                          onClick={() => {
+                            const tom = addDaysToString(todayStr, 1);
+                            if (!bookingStore.isDateBooked(tom, selectedVilla).isBooked) {
+                              handleSelectCheckIn(tom);
+                            }
+                          }}
                           className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                         >
                           Tomorrow
@@ -575,7 +658,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
               </AnimatePresence>
             </div>
 
-            {/* 3. CHECK-OUT DATE (100% Solid White Popover) */}
+            {/* 3. CHECK-OUT DATE (With Conflict Verification) */}
             <div className="relative px-3 py-1.5 border-b md:border-b-0 md:border-r border-neutral-200">
               <button
                 type="button"
@@ -612,19 +695,19 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                 />
               </button>
 
-              {/* Check-out Calendar Popover (100% Solid White Background) */}
+              {/* Check-out Calendar Popover */}
               <AnimatePresence>
                 {activeDropdown === "checkOut" && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     style={{ backgroundColor: "#ffffff" }}
-                    className="absolute left-0 sm:left-auto md:right-0 md:left-auto top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-84 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
+                    className="absolute left-0 sm:left-auto md:right-0 md:left-auto top-[calc(100%+14px)] w-[calc(100vw-3rem)] sm:w-88 max-w-sm bg-white rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.38)] border-2 border-[#E2D9CC] p-4 z-50 text-neutral-900"
                   >
                     {/* Calendar Month Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-3 bg-[#FAF7F2] -m-4 mb-3 p-3.5 rounded-t-2xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#EAE2D5] mb-2.5 bg-[#FAF7F2] -m-4 mb-2.5 p-3.5 rounded-t-2xl">
                       <div>
                         <span className="text-[10px] uppercase tracking-wider font-bold text-[#8A6B3D] block">
                           Check-out Date
@@ -653,8 +736,24 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                       </div>
                     </div>
 
+                    {/* Availability Legend */}
+                    <div className="flex items-center justify-between text-[10px] text-neutral-600 py-1.5 px-2 bg-[#FAF8F5] rounded-lg mb-2 border border-[#EAE2D5]">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                        <span>Available</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#F43F5E]" />
+                        <span>Booked</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#C2A476]" />
+                        <span>Selected</span>
+                      </span>
+                    </div>
+
                     {/* Weekday labels */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
                       {DAY_LABELS.map((label) => (
                         <span
                           key={label}
@@ -680,21 +779,42 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                         const isPast = dateStr < minCheckout;
                         const isSelected = dateStr === checkOut;
 
+                        // Check if booking this range creates conflict with another reservation
+                        const hasConflict =
+                          checkIn && selectedVilla
+                            ? !!bookingStore.hasDateConflict(checkIn, dateStr, selectedVilla)
+                            : false;
+
+                        const bookedInfo = bookingStore.isDateBooked(dateStr, selectedVilla);
+                        const isBooked = bookedInfo.isBooked;
+
                         return (
                           <button
                             key={dateStr}
                             type="button"
-                            disabled={isPast}
+                            disabled={isPast || hasConflict}
                             onClick={() => handleSelectCheckOut(dateStr)}
-                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                            title={
+                              hasConflict
+                                ? "Stay overlaps an existing booking"
+                                : isBooked
+                                ? `Booked: ${bookedInfo.villaNames.join(", ")}`
+                                : "Available Check-out"
+                            }
+                            className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all relative ${
                               isSelected
                                 ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
+                                : hasConflict || isBooked
+                                ? "bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-75"
                                 : isPast
-                                ? "text-neutral-300 cursor-not-allowed"
-                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D]"
+                                ? "text-neutral-300 cursor-not-allowed opacity-40"
+                                : "text-neutral-900 hover:bg-[#FAF6EE] hover:text-[#8A6B3D] cursor-pointer"
                             }`}
                           >
                             {dayNum}
+                            {isBooked && (
+                              <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            )}
                           </button>
                         );
                       })}
@@ -707,21 +827,36 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                           <>
                             <button
                               type="button"
-                              onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 2))}
+                              onClick={() => {
+                                const target = addDaysToString(checkIn, 2);
+                                if (!selectedVilla || !bookingStore.hasDateConflict(checkIn, target, selectedVilla)) {
+                                  handleSelectCheckOut(target);
+                                }
+                              }}
                               className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +2 Nights
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 3))}
+                              onClick={() => {
+                                const target = addDaysToString(checkIn, 3);
+                                if (!selectedVilla || !bookingStore.hasDateConflict(checkIn, target, selectedVilla)) {
+                                  handleSelectCheckOut(target);
+                                }
+                              }}
                               className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +3 Nights
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleSelectCheckOut(addDaysToString(checkIn, 5))}
+                              onClick={() => {
+                                const target = addDaysToString(checkIn, 5);
+                                if (!selectedVilla || !bookingStore.hasDateConflict(checkIn, target, selectedVilla)) {
+                                  handleSelectCheckOut(target);
+                                }
+                              }}
                               className="px-2.5 py-1.5 rounded-lg bg-[#FAF6EE] text-[#8A6B3D] border border-[#E8E0D2] hover:bg-[#f5ede0] font-semibold transition-colors cursor-pointer"
                             >
                               +5 Nights

@@ -26,9 +26,15 @@ import {
   Radio,
   Sparkles,
   BellRing,
+  Edit3,
+  Plus,
+  X,
+  Save,
+  AlertTriangle,
+  Check,
 } from "lucide-react";
 
-// Web Audio Luxury Chime generator (Pure synthesized browser audio, zero external dependencies)
+// Web Audio Luxury Chime generator (Pure synthesized browser audio)
 function playLuxuryChime() {
   try {
     const AudioContextClass =
@@ -62,7 +68,6 @@ function playLuxuryChime() {
     osc2.start(now + 0.15);
     osc2.stop(now + 0.85);
   } catch (err) {
-    // Browser audio context policy might silence until first user click
     console.debug("Web Audio notice", err);
   }
 }
@@ -78,6 +83,25 @@ export default function AdminPage() {
   const [villaFilter, setVillaFilter] = useState<string>("all");
   const [toastMessage, setToastMessage] = useState<{ title: string; subtitle?: string } | null>(null);
   const [newlyArrivedId, setNewlyArrivedId] = useState<string | null>(null);
+
+  // Editing Inquiry State (Full Editor Modal)
+  const [editingInquiry, setEditingInquiry] = useState<BookingInquiry | null>(null);
+
+  // Manual Add / Block Dates Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newBookingData, setNewBookingData] = useState({
+    villaId: siteConfig.villas[0]?.id || "b1-villa-4pn",
+    guestName: "Direct Offline Booking",
+    email: "direct@booking.com",
+    phone: siteConfig.contact.phone,
+    checkIn: "",
+    checkOut: "",
+    adults: 2,
+    children: 0,
+    specialRequests: "Host blocked dates or direct reservation.",
+    status: "confirmed" as InquiryStatus,
+  });
+
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check initial mounting & session authentication
@@ -117,7 +141,7 @@ export default function AdminPage() {
 
     // Subscribe to cross-tab BroadcastChannel + storage events
     const unsubscribe = bookingStore.subscribe((payload: RealtimeSyncPayload) => {
-      const updatedList = reloadInquiries();
+      reloadInquiries();
 
       if (payload.action === "ADD") {
         playLuxuryChime();
@@ -129,24 +153,24 @@ export default function AdminPage() {
         );
         if (payload.inquiry?.id) {
           setNewlyArrivedId(payload.inquiry.id);
-          // Clear highlight after 12 seconds
           setTimeout(() => {
             setNewlyArrivedId(null);
           }, 12000);
         }
       } else if (payload.action === "UPDATE") {
-        showNotification("Inquiry status updated across sessions.");
+        showNotification("Reservation updated & synced across public site.");
+      } else if (payload.action === "DELETE") {
+        showNotification("Reservation removed & dates released in real-time.");
       } else if (payload.action === "RESET") {
-        showNotification("Reset to demo inquiries completed.");
+        showNotification("Reset to sample inquiries completed.");
       }
     });
 
-    // Fallback heartbeat poller (every 2.5 seconds) to ensure 100% sync if backgrounded
+    // Fallback heartbeat poller (every 2.5 seconds)
     const poller = setInterval(() => {
       const latest = bookingStore.getInquiries();
       setInquiries((prev) => {
         if (latest.length !== prev.length || JSON.stringify(latest) !== JSON.stringify(prev)) {
-          // Check if there is a new inquiry added
           if (latest.length > prev.length && prev.length > 0) {
             playLuxuryChime();
             const newest = latest[0];
@@ -177,7 +201,6 @@ export default function AdminPage() {
         sessionStorage.setItem("admin_auth_status", "authenticated");
       }
       setErrorMsg("");
-      // Trigger short audio on login to unlock browser audio context
       playLuxuryChime();
     } else {
       setErrorMsg("Incorrect passcode. Please check siteConfig.ts or try again.");
@@ -191,18 +214,105 @@ export default function AdminPage() {
     }
   };
 
-  const handleStatusChange = (id: string, newStatus: InquiryStatus) => {
+  const handleQuickStatusChange = (id: string, newStatus: InquiryStatus) => {
     bookingStore.updateStatus(id, newStatus);
     reloadInquiries();
-    showNotification(`Inquiry #${id} updated to ${newStatus.toUpperCase()}`);
+    if (newStatus === "cancelled") {
+      showNotification(`Reservation #${id} Cancelled`, "Dates have been released on public site calendar.");
+    } else {
+      showNotification(`Reservation #${id} marked as ${newStatus.toUpperCase()}`, "Calendar updated in real-time.");
+    }
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(`Are you sure you want to delete inquiry #${id}?`)) {
+    if (confirm(`Are you sure you want to delete inquiry #${id}? This will release the booked dates on the public website.`)) {
       bookingStore.deleteInquiry(id);
       reloadInquiries();
-      showNotification(`Inquiry #${id} removed`);
+      showNotification(`Inquiry #${id} removed`, "Dates released on public website calendar.");
     }
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInquiry) return;
+
+    // Check conflict
+    const conflict = bookingStore.hasDateConflict(
+      editingInquiry.checkIn,
+      editingInquiry.checkOut,
+      editingInquiry.villaId,
+      editingInquiry.id
+    );
+
+    if (conflict && editingInquiry.status !== "cancelled") {
+      if (
+        !confirm(
+          `Warning: These dates overlap with existing reservation #${conflict.id} (${conflict.guestName}: ${conflict.checkIn} to ${conflict.checkOut}). Save anyway?`
+        )
+      ) {
+        return;
+      }
+    }
+
+    const villaMatch = siteConfig.villas.find((v) => v.id === editingInquiry.villaId);
+    const updatedWithVillaName = {
+      ...editingInquiry,
+      villaName: villaMatch ? villaMatch.name : editingInquiry.villaName,
+    };
+
+    bookingStore.updateInquiry(editingInquiry.id, updatedWithVillaName);
+    reloadInquiries();
+    setEditingInquiry(null);
+    showNotification(
+      `Reservation #${editingInquiry.id} Updated!`,
+      "Public website calendar has been refreshed immediately."
+    );
+  };
+
+  const handleCreateManualBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newBookingData.checkIn || !newBookingData.checkOut) {
+      alert("Please select both check-in and check-out dates.");
+      return;
+    }
+
+    if (newBookingData.checkIn >= newBookingData.checkOut) {
+      alert("Check-out date must be after check-in date.");
+      return;
+    }
+
+    // Check conflict
+    const conflict = bookingStore.hasDateConflict(
+      newBookingData.checkIn,
+      newBookingData.checkOut,
+      newBookingData.villaId
+    );
+
+    if (conflict && newBookingData.status !== "cancelled") {
+      if (
+        !confirm(
+          `Warning: These dates overlap with existing reservation #${conflict.id} (${conflict.guestName}: ${conflict.checkIn} to ${conflict.checkOut}). Continue anyway?`
+        )
+      ) {
+        return;
+      }
+    }
+
+    const villaMatch = siteConfig.villas.find((v) => v.id === newBookingData.villaId);
+    const villaName = villaMatch ? villaMatch.name : "Villa Residence";
+
+    bookingStore.addInquiry({
+      ...newBookingData,
+      villaName,
+    });
+
+    reloadInquiries();
+    setIsAddModalOpen(false);
+    showNotification(
+      "Dates Blocked / New Reservation Created!",
+      `Website calendar locked for ${villaName} (${newBookingData.checkIn} - ${newBookingData.checkOut})`
+    );
   };
 
   const handleResetSample = () => {
@@ -213,7 +323,6 @@ export default function AdminPage() {
     }
   };
 
-  // Avoid hydration mismatch
   if (!hasMounted) {
     return (
       <div className="min-h-screen bg-[#111315] flex items-center justify-center text-white">
@@ -367,21 +476,31 @@ export default function AdminPage() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span className="text-[11px] text-emerald-400 font-medium">
-                  Live Real-Time Sync Active (No refresh needed)
+                  Two-Way Live Sync Active (Edit dates, instant calendar update)
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Button to Block Dates / Add Reservation */}
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="text-xs bg-[#C2A476] hover:bg-[#aa8c5b] text-white px-3.5 py-1.5 rounded-lg transition-colors font-semibold flex items-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Block Dates / New Booking</span>
+            </button>
+
             <button
               onClick={handleResetSample}
               className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-colors flex items-center gap-1.5 cursor-pointer"
               title="Reset Sample Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset Demo Data</span>
+              <span className="hidden sm:inline">Reset Demo</span>
             </button>
+
             <button
               onClick={handleLogout}
               className="text-xs bg-white/10 hover:bg-white/20 text-neutral-200 px-4 py-1.5 rounded-lg transition-colors font-medium cursor-pointer"
@@ -399,11 +518,11 @@ export default function AdminPage() {
           <div className="flex items-center gap-2.5">
             <Radio className="w-4 h-4 text-emerald-600 animate-pulse flex-shrink-0" />
             <span>
-              <strong>Instant Sync Connected:</strong> New bookings placed by visitors on the public site appear here immediately in real-time with sound and visual alerts — without pressing F5.
+              <strong>Two-Way Live Sync Connected:</strong> When you edit dates or change status to Cancelled/Confirmed here, the public website calendar updates immediately in real-time.
             </span>
           </div>
           <span className="font-mono text-[10px] uppercase bg-emerald-200/60 px-2 py-0.5 rounded text-emerald-900 font-bold hidden md:inline">
-            AUTO-SYNC
+            LIVE TWO-WAY
           </span>
         </div>
 
@@ -560,7 +679,7 @@ export default function AdminPage() {
                       {/* Status Selector */}
                       <select
                         value={inq.status}
-                        onChange={(e) => handleStatusChange(inq.id, e.target.value as InquiryStatus)}
+                        onChange={(e) => handleQuickStatusChange(inq.id, e.target.value as InquiryStatus)}
                         className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border focus:outline-none cursor-pointer ${
                           inq.status === "pending"
                             ? "bg-amber-50 text-amber-700 border-amber-300"
@@ -574,8 +693,18 @@ export default function AdminPage() {
                         <option value="pending">● Pending</option>
                         <option value="contacted">● Contacted</option>
                         <option value="confirmed">● Confirmed</option>
-                        <option value="cancelled">● Cancelled</option>
+                        <option value="cancelled">● Cancelled (Release Dates)</option>
                       </select>
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => setEditingInquiry({ ...inq })}
+                        className="inline-flex items-center gap-1.5 bg-[#FAF7F2] hover:bg-[#f3ede1] text-[#8A6B3D] border border-[#E8E0D2] text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                        title="Edit Dates & Reservation Info"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-[#C2A476]" />
+                        <span>Edit</span>
+                      </button>
 
                       {/* Direct WhatsApp Contact */}
                       <a
@@ -593,7 +722,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => handleDelete(inq.id)}
                         className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Delete Inquiry"
+                        title="Delete Inquiry & Release Dates"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -651,7 +780,7 @@ export default function AdminPage() {
                   {inq.specialRequests && (
                     <div className="mt-3 p-3 bg-[#FAF8F5] rounded-xl text-xs text-neutral-700 border border-neutral-100">
                       <span className="font-semibold text-neutral-900 block mb-0.5">
-                        Guest Special Notes:
+                        Guest Special Notes / Reason:
                       </span>
                       <p className="italic">{inq.specialRequests}</p>
                     </div>
@@ -666,6 +795,392 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* MODAL 1: EDIT RESERVATION & DATES */}
+      {editingInquiry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden my-8">
+            <div className="bg-[#14171A] text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-[#C2A476] font-semibold">
+                  Host Reservation Editor
+                </span>
+                <h3 className="font-serif text-lg font-medium text-white">
+                  Edit Reservation #{editingInquiry.id}
+                </h3>
+              </div>
+              <button
+                onClick={() => setEditingInquiry(null)}
+                className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+              {/* Villa Selector */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Assigned Villa
+                </label>
+                <select
+                  value={editingInquiry.villaId}
+                  onChange={(e) =>
+                    setEditingInquiry({ ...editingInquiry, villaId: e.target.value })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2.5 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                >
+                  {siteConfig.villas.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.district})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Check-in Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editingInquiry.checkIn}
+                    onChange={(e) =>
+                      setEditingInquiry({ ...editingInquiry, checkIn: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Check-out Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editingInquiry.checkOut}
+                    onChange={(e) =>
+                      setEditingInquiry({ ...editingInquiry, checkOut: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Reservation Status
+                </label>
+                <select
+                  value={editingInquiry.status}
+                  onChange={(e) =>
+                    setEditingInquiry({
+                      ...editingInquiry,
+                      status: e.target.value as InquiryStatus,
+                    })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2.5 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="confirmed">Confirmed (Dates Locked)</option>
+                  <option value="cancelled">Cancelled (Dates Released)</option>
+                </select>
+              </div>
+
+              {/* Guest Information */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Guest Name / Label
+                  </label>
+                  <input
+                    type="text"
+                    value={editingInquiry.guestName}
+                    onChange={(e) =>
+                      setEditingInquiry({ ...editingInquiry, guestName: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Phone / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={editingInquiry.phone}
+                    onChange={(e) =>
+                      setEditingInquiry({ ...editingInquiry, phone: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={editingInquiry.email}
+                  onChange={(e) =>
+                    setEditingInquiry({ ...editingInquiry, email: e.target.value })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                />
+              </div>
+
+              {/* Guests Count */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Adults
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="16"
+                    value={editingInquiry.adults}
+                    onChange={(e) =>
+                      setEditingInquiry({
+                        ...editingInquiry,
+                        adults: Number(e.target.value),
+                      })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Children
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={editingInquiry.children}
+                    onChange={(e) =>
+                      setEditingInquiry({
+                        ...editingInquiry,
+                        children: Number(e.target.value),
+                      })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900"
+                  />
+                </div>
+              </div>
+
+              {/* Special Requests */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Host Notes / Special Requests
+                </label>
+                <textarea
+                  rows={2}
+                  value={editingInquiry.specialRequests || ""}
+                  onChange={(e) =>
+                    setEditingInquiry({
+                      ...editingInquiry,
+                      specialRequests: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 resize-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-3 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingInquiry(null)}
+                  className="w-1/2 py-2.5 rounded-xl border border-neutral-300 text-xs font-medium text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: MANUAL NEW BOOKING / BLOCK DATES */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden my-8">
+            <div className="bg-[#14171A] text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-[#C2A476] font-semibold">
+                  Host Calendar Management
+                </span>
+                <h3 className="font-serif text-lg font-medium text-white">
+                  Block Dates or Add Offline Reservation
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateManualBooking} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Select Villa to Block / Reserve
+                </label>
+                <select
+                  value={newBookingData.villaId}
+                  onChange={(e) =>
+                    setNewBookingData({ ...newBookingData, villaId: e.target.value })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2.5 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                >
+                  {siteConfig.villas.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.district})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Check-in Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newBookingData.checkIn}
+                    onChange={(e) =>
+                      setNewBookingData({ ...newBookingData, checkIn: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Check-out Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newBookingData.checkOut}
+                    onChange={(e) =>
+                      setNewBookingData({ ...newBookingData, checkOut: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Guest Name / Reason */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Guest Name or Reason for Block
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. VIP Guest Mr. Thomas / Private Maintenance"
+                  value={newBookingData.guestName}
+                  onChange={(e) =>
+                    setNewBookingData({ ...newBookingData, guestName: e.target.value })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
+                  required
+                />
+              </div>
+
+              {/* Contact Info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Phone / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={newBookingData.phone}
+                    onChange={(e) =>
+                      setNewBookingData({ ...newBookingData, phone: e.target.value })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                    Status
+                  </label>
+                  <select
+                    value={newBookingData.status}
+                    onChange={(e) =>
+                      setNewBookingData({
+                        ...newBookingData,
+                        status: e.target.value as InquiryStatus,
+                      })
+                    }
+                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900"
+                  >
+                    <option value="confirmed">Confirmed (Locks Dates)</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
+                  Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={newBookingData.specialRequests}
+                  onChange={(e) =>
+                    setNewBookingData({
+                      ...newBookingData,
+                      specialRequests: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-1/2 py-2.5 rounded-xl border border-neutral-300 text-xs font-medium text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Lock Dates on Calendar</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

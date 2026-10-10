@@ -6,6 +6,21 @@ export const LOCAL_EVENT_NAME = "danang_realtime_booking_event";
 
 const SAMPLE_INITIAL_INQUIRIES: BookingInquiry[] = [
   {
+    id: "INQ-9480",
+    villaId: "b1-villa-4pn",
+    villaName: "B1 Villa • 4 Bedrooms",
+    guestName: "David Sterling",
+    email: "david.sterling@sanctuary.co",
+    phone: "+84 905 111 222",
+    checkIn: "2026-10-18",
+    checkOut: "2026-10-23",
+    adults: 6,
+    children: 2,
+    specialRequests: "VIP arrival. Early check-in requested.",
+    status: "confirmed",
+    createdAt: "2026-10-09T10:00:00.000Z",
+  },
+  {
     id: "INQ-9481",
     villaId: "b1-villa-4pn",
     villaName: "B1 Villa • 4 Bedrooms",
@@ -27,12 +42,12 @@ const SAMPLE_INITIAL_INQUIRIES: BookingInquiry[] = [
     guestName: "Elena Rostova",
     email: "elena.rostova@designstudio.ch",
     phone: "+41 79 123 4567",
-    checkIn: "2026-12-02",
-    checkOut: "2026-12-07",
+    checkIn: "2026-10-25",
+    checkOut: "2026-10-30",
     adults: 8,
     children: 0,
     specialRequests: "Celebrating birthday. Need private chef dining setup for one evening.",
-    status: "pending",
+    status: "confirmed",
     createdAt: "2026-10-09T08:15:00.000Z",
   },
   {
@@ -100,13 +115,13 @@ export const bookingStore = {
   },
 
   addInquiry(
-    inquiryData: Omit<BookingInquiry, "id" | "createdAt" | "status">
+    inquiryData: Omit<BookingInquiry, "id" | "createdAt" | "status"> & { status?: InquiryStatus }
   ): BookingInquiry {
     const inquiries = this.getInquiries();
     const newInquiry: BookingInquiry = {
       ...inquiryData,
       id: `INQ-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: "pending",
+      status: inquiryData.status || "pending",
       createdAt: new Date().toISOString(),
     };
 
@@ -122,12 +137,12 @@ export const bookingStore = {
     return newInquiry;
   },
 
-  updateStatus(id: string, status: InquiryStatus): void {
+  updateInquiry(id: string, updatedFields: Partial<BookingInquiry>): void {
     const inquiries = this.getInquiries();
     let updatedInquiry: BookingInquiry | undefined;
     const updated = inquiries.map((item) => {
       if (item.id === id) {
-        updatedInquiry = { ...item, status };
+        updatedInquiry = { ...item, ...updatedFields };
         return updatedInquiry;
       }
       return item;
@@ -142,6 +157,10 @@ export const bookingStore = {
         timestamp: Date.now(),
       });
     }
+  },
+
+  updateStatus(id: string, status: InquiryStatus): void {
+    this.updateInquiry(id, { status });
   },
 
   deleteInquiry(id: string): void {
@@ -165,6 +184,59 @@ export const bookingStore = {
         timestamp: Date.now(),
       });
     }
+  },
+
+  /**
+   * Check if a specific date (YYYY-MM-DD) is occupied by any active reservation for a given villa.
+   * If villaId is not specified or empty (All 4 villas), checks if ALL 4 villas are occupied on that date.
+   */
+  isDateBooked(dateStr: string, villaId?: string): { isBooked: boolean; villaNames: string[]; status?: InquiryStatus } {
+    const inquiries = this.getInquiries();
+    const activeInquiries = inquiries.filter(
+      (inq) => inq.status !== "cancelled" && dateStr >= inq.checkIn && dateStr < inq.checkOut
+    );
+
+    if (villaId) {
+      const match = activeInquiries.find((inq) => inq.villaId === villaId);
+      if (match) {
+        return { isBooked: true, villaNames: [match.villaName], status: match.status };
+      }
+      return { isBooked: false, villaNames: [] };
+    }
+
+    // If "All 4 Villas": marked fully booked only if 4 distinct villas are booked
+    const bookedVillaIds = new Set(activeInquiries.map((i) => i.villaId));
+    if (bookedVillaIds.size >= 4) {
+      return {
+        isBooked: true,
+        villaNames: Array.from(bookedVillaIds),
+        status: "confirmed",
+      };
+    }
+
+    return {
+      isBooked: false,
+      villaNames: Array.from(bookedVillaIds),
+    };
+  },
+
+  /**
+   * Check if a requested stay date range overlaps with existing bookings
+   */
+  hasDateConflict(
+    checkIn: string,
+    checkOut: string,
+    villaId: string,
+    excludeInqId?: string
+  ): BookingInquiry | undefined {
+    const inquiries = this.getInquiries();
+    return inquiries.find((inq) => {
+      if (inq.status === "cancelled" || inq.villaId !== villaId) return false;
+      if (excludeInqId && inq.id === excludeInqId) return false;
+
+      // Overlap condition: startA < endB and startB < endA
+      return checkIn < inq.checkOut && inq.checkIn < checkOut;
+    });
   },
 
   /**
