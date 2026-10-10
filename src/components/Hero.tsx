@@ -18,6 +18,7 @@ import {
   X,
   AlertCircle,
   Info,
+  Wrench,
 } from "lucide-react";
 
 interface HeroProps {
@@ -195,9 +196,21 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
     setActiveDropdown(null);
   };
 
+  const selectedVillaData = siteConfig.villas.find((v) => v.id === selectedVilla);
+  const isSelectedVillaUnderMaintenance = selectedVilla ? bookingStore.isVillaUnderMaintenance(selectedVilla) : false;
+  const selectedVillaMaintenanceInfo = selectedVilla ? bookingStore.getVillaMaintenanceInfo(selectedVilla) : undefined;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveDropdown(null);
+
+    // If selected villa is under maintenance, prohibit booking
+    if (selectedVilla && isSelectedVillaUnderMaintenance) {
+      alert(
+        `Sanctuary Under Maintenance!\n\n${selectedVillaData?.name || selectedVilla} is currently undergoing scheduled maintenance. Reservations are temporarily closed for this property.\n\nPlease select another villa or contact our concierge directly.`
+      );
+      return;
+    }
 
     // If dates are chosen for a specific villa, verify no conflict
     if (selectedVilla && checkIn && checkOut) {
@@ -225,8 +238,6 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
   };
-
-  const selectedVillaData = siteConfig.villas.find((v) => v.id === selectedVilla);
 
   // Calendar Day Grid calculations
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -318,9 +329,17 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-600 group-hover:text-[#8A6B3D] transition-colors">
-                    Select Sanctuary
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="block text-[10px] uppercase font-bold tracking-wider text-neutral-600 group-hover:text-[#8A6B3D] transition-colors">
+                      Select Sanctuary
+                    </span>
+                    {isSelectedVillaUnderMaintenance && (
+                      <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 font-bold px-1.5 py-0.5 rounded-full uppercase flex items-center gap-0.5">
+                        <Wrench className="w-2.5 h-2.5" />
+                        <span>Maintenance</span>
+                      </span>
+                    )}
+                  </div>
                   <span className="block text-xs sm:text-sm font-bold text-neutral-900 truncate mt-0.5">
                     {selectedVillaData ? selectedVillaData.name : "All 4 Villas"}
                   </span>
@@ -391,6 +410,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                       {/* All 4 Villas strictly listed */}
                       {siteConfig.villas.map((v) => {
                         const isSelected = selectedVilla === v.id;
+                        const isUnderMaintenance = bookingStore.isVillaUnderMaintenance(v.id);
                         return (
                           <button
                             key={v.id}
@@ -418,9 +438,17 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#8A6B3D] transition-colors text-neutral-900">
-                                  {v.name}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-xs sm:text-sm font-bold truncate group-hover:text-[#8A6B3D] transition-colors text-neutral-900">
+                                    {v.name}
+                                  </p>
+                                  {isUnderMaintenance && (
+                                    <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 font-bold px-1.5 py-0.5 rounded-full uppercase flex items-center gap-0.5 flex-shrink-0">
+                                      <Wrench className="w-2.5 h-2.5" />
+                                      <span>Maintenance</span>
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[11px] text-neutral-600 truncate mt-0.5 font-medium">
                                   {v.district} • {v.bedrooms} PN • {v.poolType}
                                 </p>
@@ -892,13 +920,46 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
             <div className="px-2 pt-1 md:pt-0">
               <button
                 type="submit"
-                className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 sm:py-4 px-6 rounded-2xl md:rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isSelectedVillaUnderMaintenance}
+                className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl md:rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-lg flex items-center justify-center gap-2 group ${
+                  isSelectedVillaUnderMaintenance
+                    ? "bg-neutral-300 text-neutral-500 cursor-not-allowed border border-neutral-300 shadow-none"
+                    : "bg-[#14171A] hover:bg-[#C2A476] text-white hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                }`}
               >
-                <span>Check Dates</span>
-                <ArrowRight className="w-4 h-4 text-[#C2A476] group-hover:text-white group-hover:translate-x-1 transition-all" />
+                {isSelectedVillaUnderMaintenance ? (
+                  <>
+                    <Wrench className="w-4 h-4 text-neutral-500" />
+                    <span>Under Maintenance</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Check Dates</span>
+                    <ArrowRight className="w-4 h-4 text-[#C2A476] group-hover:text-white group-hover:translate-x-1 transition-all" />
+                  </>
+                )}
               </button>
             </div>
           </form>
+
+          {/* Under Maintenance Notice for Selected Villa */}
+          {isSelectedVillaUnderMaintenance && (
+            <div className="mt-3 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 animate-fade-in shadow-sm">
+              <div className="flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>
+                  <strong>{selectedVillaData?.name}</strong> is currently undergoing scheduled maintenance. Reservations are temporarily closed.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedVilla("")}
+                className="text-amber-800 hover:text-amber-950 font-bold underline text-[11px] flex-shrink-0 cursor-pointer"
+              >
+                Choose Another Villa
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

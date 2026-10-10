@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Villa } from "@/types";
+import { bookingStore } from "@/lib/bookingStore";
 import {
   MapPin,
   Users,
@@ -14,6 +15,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Camera,
+  Wrench,
+  AlertCircle,
 } from "lucide-react";
 
 interface VillaCardProps {
@@ -29,6 +32,17 @@ export const VillaCard: React.FC<VillaCardProps> = ({
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
+  const [maintenanceVer, setMaintenanceVer] = useState(0);
+
+  useEffect(() => {
+    const unsub = bookingStore.subscribe(() => {
+      setMaintenanceVer((v) => v + 1);
+    });
+    return () => unsub();
+  }, []);
+
+  const isUnderMaintenance = bookingStore.isVillaUnderMaintenance(villa.id);
+  const maintenanceInfo = bookingStore.getVillaMaintenanceInfo(villa.id);
 
   const photos = villa.gallery && villa.gallery.length > 0 ? villa.gallery : [villa.image];
 
@@ -85,13 +99,19 @@ export const VillaCard: React.FC<VillaCardProps> = ({
         )}
 
         {/* Top Badges */}
-        <div className="absolute top-4 left-4 flex gap-2 items-center z-10">
+        <div className="absolute top-4 left-4 flex gap-2 items-center z-10 flex-wrap">
           <span className="bg-[#14171A]/90 backdrop-blur-md text-[#C2A476] border border-[#C2A476]/30 text-xs font-serif font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
             {villa.code}
           </span>
           <span className="bg-white/90 backdrop-blur-md text-neutral-800 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
             {villa.district}
           </span>
+          {isUnderMaintenance && (
+            <span className="bg-amber-600/95 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1 border border-amber-300 animate-pulse">
+              <Wrench className="w-3 h-3" />
+              <span>Under Maintenance</span>
+            </span>
+          )}
         </div>
 
         {/* Photo Count Pill */}
@@ -234,18 +254,44 @@ export const VillaCard: React.FC<VillaCardProps> = ({
               </li>
             ))}
           </ul>
+
+          {/* Maintenance Notice Banner */}
+          {isUnderMaintenance && (
+            <div className="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5 animate-fade-in shadow-sm">
+              <Wrench className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-950 uppercase tracking-wide text-[11px]">
+                  Scheduled Maintenance Mode
+                </p>
+                <p className="text-[11px] text-amber-800 font-light mt-0.5 leading-relaxed">
+                  {maintenanceInfo?.reason || "This villa is undergoing scheduled luxury maintenance & renovation. Reservations are temporarily closed."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div>
           <div className="pt-2 flex items-center gap-3">
-            <button
-              onClick={() => onInquire(villa)}
-              className="flex-1 bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-lg active:scale-95"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Request Availability</span>
-            </button>
+            {isUnderMaintenance ? (
+              <button
+                type="button"
+                disabled
+                className="flex-1 bg-neutral-200 text-neutral-500 py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2 border border-neutral-300 shadow-none"
+              >
+                <Wrench className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Under Maintenance</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onInquire(villa)}
+                className="flex-1 bg-[#14171A] hover:bg-[#C2A476] text-white py-3.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-lg active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Request Availability</span>
+              </button>
+            )}
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="p-3 rounded-xl border border-neutral-300 hover:border-neutral-900 text-neutral-700 hover:text-neutral-900 transition-colors"

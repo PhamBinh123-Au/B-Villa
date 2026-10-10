@@ -11,6 +11,7 @@ import {
   Sparkles,
   AlertCircle,
   Clock,
+  Wrench,
 } from "lucide-react";
 import { bookingStore } from "@/lib/bookingStore";
 
@@ -279,6 +280,14 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
               </span>
             </div>
 
+            {/* Maintenance Warning Banner if Villa is Under Maintenance */}
+            {villaId && bookingStore.isVillaUnderMaintenance(villaId) && (
+              <div className="mb-2 p-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-[10px] flex items-center gap-1.5 animate-fade-in">
+                <Wrench className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                <span className="font-semibold">Under Maintenance — Dates Unavailable</span>
+              </div>
+            )}
+
             {/* Weekdays */}
             <div className="grid grid-cols-7 gap-1 text-center mb-1">
               {DAY_LABELS.map((d) => (
@@ -301,6 +310,7 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
                 const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
                 const isPast = dateStr < effectiveMin;
                 const isSelected = dateStr === selectedDate;
+                const isUnderMaintenance = villaId ? bookingStore.isVillaUnderMaintenance(villaId) : false;
 
                 // Booked check for villa
                 const bookedInfo = villaId ? bookingStore.isDateBooked(dateStr, villaId) : { isBooked: false, villaNames: [] };
@@ -322,7 +332,7 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
                   dateStr > checkInDate &&
                   dateStr < selectedDate;
 
-                const isDisabled = isPast || (isCheckOut ? hasRangeConflict : isBooked);
+                const isDisabled = isPast || isUnderMaintenance || (isCheckOut ? hasRangeConflict : isBooked);
 
                 return (
                   <button
@@ -331,7 +341,9 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
                     disabled={isDisabled}
                     onClick={() => handleDateClick(dateStr)}
                     title={
-                      isBooked
+                      isUnderMaintenance
+                        ? "Villa is currently undergoing scheduled maintenance"
+                        : isBooked
                         ? `Reserved: ${bookedInfo.villaNames.join(", ") || "Booked"}`
                         : hasRangeConflict
                         ? "Stay overlaps with an existing reservation"
@@ -344,6 +356,8 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
                         ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
                         : isInRange
                         ? "bg-[#FAF6EE] text-[#8A6B3D] font-bold"
+                        : isUnderMaintenance
+                        ? "bg-amber-50 text-amber-500 border border-amber-200 line-through cursor-not-allowed opacity-60"
                         : isCheckOut
                         ? hasRangeConflict
                           ? "bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-75"
@@ -358,7 +372,7 @@ export const LuxuryDatePicker: React.FC<LuxuryDatePickerProps> = ({
                     }`}
                   >
                     {dayNum}
-                    {!isCheckOut && isBooked && (
+                    {!isCheckOut && isBooked && !isUnderMaintenance && (
                       <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-rose-500" />
                     )}
                   </button>

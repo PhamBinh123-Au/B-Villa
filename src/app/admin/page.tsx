@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { siteConfig } from "@/config/siteConfig";
 import { bookingStore, RealtimeSyncPayload } from "@/lib/bookingStore";
-import { BookingInquiry, InquiryStatus } from "@/types";
+import { BookingInquiry, InquiryStatus, Villa, VillaMaintenanceInfo } from "@/types";
 import {
   LuxuryDatePicker,
   addDays,
@@ -37,6 +38,7 @@ import {
   Save,
   AlertTriangle,
   Check,
+  Wrench,
 } from "lucide-react";
 
 // Web Audio Luxury Chime generator (Pure synthesized browser audio)
@@ -107,6 +109,11 @@ export default function AdminPage() {
     status: "confirmed" as InquiryStatus,
   });
 
+  // Maintenance State & Dialog
+  const [maintenanceMap, setMaintenanceMap] = useState<Record<string, VillaMaintenanceInfo>>({});
+  const [maintenanceDialogVilla, setMaintenanceDialogVilla] = useState<Villa | null>(null);
+  const [maintenanceNoteInput, setMaintenanceNoteInput] = useState("");
+
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check initial mounting & session authentication
@@ -130,11 +137,36 @@ export default function AdminPage() {
     }, 6000);
   };
 
-  // Load inquiries from reactive store
+  // Load inquiries and maintenance from reactive store
   const reloadInquiries = () => {
     const list = bookingStore.getInquiries();
     setInquiries(list);
+    setMaintenanceMap(bookingStore.getMaintenanceMap());
     return list;
+  };
+
+  // Toggle or update villa maintenance status
+  const handleToggleMaintenance = (villaId: string, customReason?: string) => {
+    const currentMaint = Boolean(maintenanceMap[villaId]?.isMaintenance);
+    const newStatus = !currentMaint;
+    const vMatch = siteConfig.villas.find((v) => v.id === villaId);
+    const vName = vMatch ? vMatch.name : villaId;
+
+    bookingStore.setVillaMaintenance(
+      villaId,
+      newStatus,
+      customReason || (newStatus ? "Scheduled seasonal maintenance & deep renovation" : undefined)
+    );
+
+    setMaintenanceMap(bookingStore.getMaintenanceMap());
+    playLuxuryChime();
+
+    showNotification(
+      newStatus ? `🛠️ ${vName} is now Under Maintenance` : `✅ ${vName} Restored to Active`,
+      newStatus
+        ? "Public inquiries and calendar dates are strictly locked in real-time."
+        : "Public website can now receive new booking inquiries."
+    );
   };
 
   // Setup Real-time Multi-Channel Listener
@@ -162,6 +194,14 @@ export default function AdminPage() {
             setNewlyArrivedId(null);
           }, 12000);
         }
+      } else if (payload.action === "MAINTENANCE_UPDATE") {
+        playLuxuryChime();
+        const vMatch = siteConfig.villas.find((v) => v.id === payload.villaId);
+        const vName = vMatch ? vMatch.name : payload.villaId || "Villa";
+        showNotification(
+          payload.isMaintenance ? `🛠️ ${vName} Placed Under Maintenance` : `✅ ${vName} Restored to Active`,
+          payload.isMaintenance ? "Public bookings are strictly locked." : "Public bookings are now open."
+        );
       } else if (payload.action === "UPDATE") {
         showNotification("Reservation updated & synced across public site.");
       } else if (payload.action === "DELETE") {
@@ -174,6 +214,7 @@ export default function AdminPage() {
     // Fallback heartbeat poller (every 2.5 seconds)
     const poller = setInterval(() => {
       const latest = bookingStore.getInquiries();
+      setMaintenanceMap(bookingStore.getMaintenanceMap());
       setInquiries((prev) => {
         if (latest.length !== prev.length || JSON.stringify(latest) !== JSON.stringify(prev)) {
           if (latest.length > prev.length && prev.length > 0) {
@@ -353,6 +394,7 @@ export default function AdminPage() {
   const pendingCount = inquiries.filter((i) => i.status === "pending").length;
   const contactedCount = inquiries.filter((i) => i.status === "contacted").length;
   const confirmedCount = inquiries.filter((i) => i.status === "confirmed").length;
+  const maintenanceCount = siteConfig.villas.filter((v) => Boolean(maintenanceMap[v.id]?.isMaintenance)).length;
 
   // Filtered List
   const filteredInquiries = inquiries.filter((inq) => {
@@ -544,56 +586,231 @@ export default function AdminPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8">
+          <div className="bg-white p-4.5 rounded-2xl border border-neutral-200 shadow-sm">
             <div className="flex items-center justify-between text-neutral-500 mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
                 Total Inquiries
               </span>
               <Calendar className="w-4 h-4 text-neutral-400" />
             </div>
-            <p className="text-3xl font-serif font-bold text-neutral-900">
+            <p className="text-2xl sm:text-3xl font-serif font-bold text-neutral-900">
               {totalCount}
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
+          <div className="bg-white p-4.5 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
             <div className="flex items-center justify-between text-amber-700 mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
                 Pending Action
               </span>
               <Clock className="w-4 h-4 text-amber-500" />
             </div>
-            <p className="text-3xl font-serif font-bold text-amber-600">
+            <p className="text-2xl sm:text-3xl font-serif font-bold text-amber-600">
               {pendingCount}
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden">
+          <div className="bg-white p-4.5 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
             <div className="flex items-center justify-between text-blue-700 mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
                 Contacted
               </span>
               <PhoneCall className="w-4 h-4 text-blue-500" />
             </div>
-            <p className="text-3xl font-serif font-bold text-blue-600">
+            <p className="text-2xl sm:text-3xl font-serif font-bold text-blue-600">
               {contactedCount}
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden">
+          <div className="bg-white p-4.5 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
             <div className="flex items-center justify-between text-emerald-700 mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
                 Confirmed
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             </div>
-            <p className="text-3xl font-serif font-bold text-emerald-600">
+            <p className="text-2xl sm:text-3xl font-serif font-bold text-emerald-600">
               {confirmedCount}
             </p>
+          </div>
+
+          <div className={`p-4.5 rounded-2xl border shadow-sm relative overflow-hidden transition-all ${
+            maintenanceCount > 0
+              ? "bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20"
+              : "bg-white border-neutral-200"
+          }`}>
+            <div className={`absolute top-0 left-0 right-0 h-1 ${
+              maintenanceCount > 0 ? "bg-amber-500" : "bg-neutral-300"
+            }`} />
+            <div className="flex items-center justify-between text-neutral-600 mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
+                Under Maintenance
+              </span>
+              <Wrench className={`w-4 h-4 ${maintenanceCount > 0 ? "text-amber-600 animate-pulse" : "text-neutral-400"}`} />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <p className={`text-2xl sm:text-3xl font-serif font-bold ${
+                maintenanceCount > 0 ? "text-amber-700" : "text-neutral-700"
+              }`}>
+                {maintenanceCount}
+              </p>
+              <span className="text-xs text-neutral-400 font-medium">/ 4 Villas</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dedicated Villa Maintenance & Availability Control Panel */}
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-neutral-200 shadow-sm mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-100 gap-3 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 flex-shrink-0 shadow-sm">
+                <Wrench className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-serif text-base sm:text-lg font-bold text-neutral-900">
+                    Villa Maintenance & Operational Status Control
+                  </h2>
+                  <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300 uppercase tracking-wider hidden sm:inline">
+                    Live Toggle
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 font-light mt-0.5">
+                  Select any villa to place under maintenance. Locked villas immediately block online inquiries and calendar dates across the public website.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
+                maintenanceCount > 0
+                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                  : "bg-emerald-50 text-emerald-800 border-emerald-300"
+              }`}>
+                {4 - maintenanceCount} of 4 Villas Active
+              </span>
+            </div>
+          </div>
+
+          {/* 4 Villa Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {siteConfig.villas.map((villa) => {
+              const isMaint = Boolean(maintenanceMap[villa.id]?.isMaintenance);
+              const info = maintenanceMap[villa.id];
+
+              return (
+                <div
+                  key={villa.id}
+                  className={`rounded-2xl border p-4 transition-all duration-300 flex flex-col justify-between ${
+                    isMaint
+                      ? "border-amber-400 bg-amber-50/40 shadow-md ring-2 ring-amber-400/25"
+                      : "border-neutral-200 bg-[#FAF8F5]/60 hover:border-[#C2A476] hover:bg-white hover:shadow-md"
+                  }`}
+                >
+                  <div>
+                    {/* Villa Thumbnail & Title */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-neutral-200 flex-shrink-0 bg-neutral-100 shadow-sm">
+                        <Image
+                          src={villa.image}
+                          alt={villa.name}
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute top-0.5 left-0.5 bg-black/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                          {villa.code}
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
+                          {villa.name}
+                        </h3>
+                        <p className="text-[11px] text-neutral-500 truncate">
+                          {villa.district} • {villa.bedrooms} PN
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Operational Status Pill */}
+                    <div className="mb-3">
+                      {isMaint ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                          </span>
+                          <span>Under Maintenance (Locked)</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>Operational & Active</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reason / Note Box */}
+                    {isMaint && (
+                      <div className="bg-white/90 border border-amber-200 rounded-xl p-2.5 mb-3 text-[11px] text-amber-900 shadow-xs">
+                        <span className="text-[10px] uppercase font-bold text-amber-700 block mb-0.5">
+                          Public Notice:
+                        </span>
+                        <p className="line-clamp-2 italic font-light">
+                          &ldquo;{info?.reason || "Scheduled luxury maintenance & seasonal care."}&rdquo;
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="pt-2 border-t border-neutral-100 flex flex-col gap-2 mt-2">
+                    {isMaint ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMaintenance(villa.id)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer hover:shadow-md"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Restore to Active</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMaintenanceDialogVilla(villa);
+                          setMaintenanceNoteInput(
+                            info?.reason || "Scheduled seasonal maintenance & deep renovation. Reopening soon."
+                          );
+                        }}
+                        className="w-full bg-[#14171A] hover:bg-amber-600 text-white py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer hover:shadow-md"
+                      >
+                        <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Set Under Maintenance</span>
+                      </button>
+                    )}
+
+                    {isMaint && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMaintenanceDialogVilla(villa);
+                          setMaintenanceNoteInput(
+                            info?.reason || "Scheduled seasonal maintenance & deep renovation. Reopening soon."
+                          );
+                        }}
+                        className="text-[11px] text-neutral-500 hover:text-neutral-900 underline text-center cursor-pointer py-0.5"
+                      >
+                        Edit maintenance notice
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1316,6 +1533,104 @@ export default function AdminPage() {
                 })()}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Maintenance Settings / Custom Reason Dialog Modal */}
+      {maintenanceDialogVilla && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-[#EAE5DC] text-neutral-900">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
+                  <Wrench className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-neutral-900 leading-tight">
+                    Villa Maintenance Settings
+                  </h3>
+                  <span className="text-[10px] text-amber-700 font-semibold uppercase tracking-wider">
+                    Operational Control
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMaintenanceDialogVilla(null)}
+                className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                Target Sanctuary:
+              </label>
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-neutral-200 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-neutral-200 flex-shrink-0 shadow-sm">
+                  <Image
+                    src={maintenanceDialogVilla.image}
+                    alt={maintenanceDialogVilla.name}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute top-0.5 left-0.5 bg-black/80 text-white text-[9px] font-bold px-1 rounded">
+                    {maintenanceDialogVilla.code}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs sm:text-sm text-neutral-900 truncate">
+                    {maintenanceDialogVilla.name}
+                  </h4>
+                  <p className="text-[11px] text-neutral-500">
+                    {maintenanceDialogVilla.district} • {maintenanceDialogVilla.bedrooms} PN En-suite
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                Maintenance Notice & Reason (Shown to public guests):
+              </label>
+              <textarea
+                rows={3}
+                value={maintenanceNoteInput}
+                onChange={(e) => setMaintenanceNoteInput(e.target.value)}
+                placeholder="e.g. Scheduled pool resurfacing & luxury interior upgrade. Reopening soon."
+                className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl p-3 text-xs text-neutral-900 focus:outline-none focus:border-[#C2A476] resize-none"
+              />
+              <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">
+                When activated, this villa cannot be booked online. The calendar dates will be locked and this notice will be displayed to guests.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
+              <button
+                type="button"
+                onClick={() => setMaintenanceDialogVilla(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-medium text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleToggleMaintenance(maintenanceDialogVilla.id, maintenanceNoteInput);
+                  setMaintenanceDialogVilla(null);
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>
+                  {Boolean(maintenanceMap[maintenanceDialogVilla.id]?.isMaintenance)
+                    ? "Update Notice"
+                    : "Activate Maintenance & Lock"}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

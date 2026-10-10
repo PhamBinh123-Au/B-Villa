@@ -1,6 +1,7 @@
-import { BookingInquiry, InquiryStatus } from "@/types";
+import { BookingInquiry, InquiryStatus, VillaMaintenanceInfo } from "@/types";
 
 const STORAGE_KEY = "danang_villa_booking_inquiries_v1";
+const MAINTENANCE_STORAGE_KEY = "danang_villa_maintenance_v1";
 export const SYNC_CHANNEL_NAME = "danang_villa_realtime_bookings";
 export const LOCAL_EVENT_NAME = "danang_realtime_booking_event";
 
@@ -68,9 +69,12 @@ const SAMPLE_INITIAL_INQUIRIES: BookingInquiry[] = [
 ];
 
 export interface RealtimeSyncPayload {
-  action: "ADD" | "UPDATE" | "DELETE" | "RESET";
+  action: "ADD" | "UPDATE" | "DELETE" | "RESET" | "MAINTENANCE_UPDATE";
   inquiry?: BookingInquiry;
   id?: string;
+  villaId?: string;
+  isMaintenance?: boolean;
+  reason?: string;
   timestamp: number;
 }
 
@@ -99,6 +103,53 @@ function broadcastSync(payload: RealtimeSyncPayload) {
 }
 
 export const bookingStore = {
+  getMaintenanceMap(): Record<string, VillaMaintenanceInfo> {
+    if (typeof window === "undefined") return {};
+    try {
+      const data = localStorage.getItem(MAINTENANCE_STORAGE_KEY);
+      if (!data) return {};
+      return JSON.parse(data);
+    } catch (err) {
+      console.error("Failed to read maintenance data from storage", err);
+      return {};
+    }
+  },
+
+  isVillaUnderMaintenance(villaId: string): boolean {
+    if (!villaId) return false;
+    const map = this.getMaintenanceMap();
+    return Boolean(map[villaId]?.isMaintenance);
+  },
+
+  getVillaMaintenanceInfo(villaId: string): VillaMaintenanceInfo | undefined {
+    if (!villaId) return undefined;
+    const map = this.getMaintenanceMap();
+    return map[villaId];
+  },
+
+  setVillaMaintenance(villaId: string, isMaintenance: boolean, reason?: string): void {
+    if (typeof window === "undefined") return;
+    try {
+      const map = this.getMaintenanceMap();
+      const info: VillaMaintenanceInfo = {
+        villaId,
+        isMaintenance,
+        reason: reason || (isMaintenance ? "Scheduled luxury maintenance & seasonal care" : undefined),
+        updatedAt: new Date().toISOString(),
+      };
+      map[villaId] = info;
+      localStorage.setItem(MAINTENANCE_STORAGE_KEY, JSON.stringify(map));
+      broadcastSync({
+        action: "MAINTENANCE_UPDATE",
+        villaId,
+        isMaintenance,
+        reason: info.reason,
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      console.error("Failed to update villa maintenance in storage", err);
+    }
+  },
   getInquiries(): BookingInquiry[] {
     if (typeof window === "undefined") return [];
     try {
@@ -118,6 +169,13 @@ export const bookingStore = {
     inquiryData: Omit<BookingInquiry, "id" | "createdAt" | "status"> & { status?: InquiryStatus }
   ): BookingInquiry {
     const status = inquiryData.status || "pending";
+
+    // Strictly check if villa is currently under maintenance
+    if (inquiryData.villaId && this.isVillaUnderMaintenance(inquiryData.villaId)) {
+      throw new Error(
+        `Reservation Prohibited: Villa is currently under scheduled maintenance. Reservations are temporarily closed for this property.`
+      );
+    }
 
     // Strictly validate against overlapping reservations for the same villa
     if (status !== "cancelled" && inquiryData.villaId && inquiryData.checkIn && inquiryData.checkOut) {
@@ -240,6 +298,9 @@ export const bookingStore = {
     );
 
     if (villaId) {
+      if (this.isVillaUnderMaintenance(villaId)) {
+        return { isBooked: true, villaNames: ["Under Maintenance"], status: "confirmed" };
+      }
       const match = activeInquiries.find((inq) => inq.villaId === villaId);
       if (match) {
         return { isBooked: true, villaNames: [match.villaName], status: match.status };
@@ -247,8 +308,14 @@ export const bookingStore = {
       return { isBooked: false, villaNames: [] };
     }
 
-    // If "All 4 Villas": marked fully booked only if 4 distinct villas are booked
+    // If "All 4 Villas": marked fully booked only if 4 distinct villas are booked or under maintenance
     const bookedVillaIds = new Set(activeInquiries.map((i) => i.villaId));
+    const maintenanceMap = this.getMaintenanceMap();
+    Object.keys(maintenanceMap).forEach((id) => {
+      if (maintenanceMap[id]?.isMaintenance) {
+        bookedVillaIds.add(id);
+      }
+    });
     if (bookedVillaIds.size >= 4) {
       return {
         isBooked: true,
@@ -272,6 +339,25 @@ export const bookingStore = {
     villaId: string,
     excludeInqId?: string
   ): BookingInquiry | undefined {
+    if (villaId && this.isVillaUnderMaintenance(villaId)) {
+      const info = this.getVillaMaintenanceInfo(villaId);
+      return {
+        id: "MAINTENANCE",
+        villaId,
+        villaName: "Under Maintenance",
+        guestName: "Property Under Maintenance",
+        email: "",
+        phone: "",
+        checkIn: checkIn || "2020-01-01",
+        checkOut: checkOut || "2099-12-31",
+        adults: 0,
+        children: 0,
+        status: "confirmed",
+        createdAt: info?.updatedAt || new Date().toISOString(),
+        specialRequests: info?.reason || "Scheduled luxury maintenance & seasonal care. Inquiries temporarily paused.",
+      };
+    }
+
     const inquiries = this.getInquiries();
     return inquiries.find((inq) => {
       if (inq.status === "cancelled" || inq.villaId !== villaId) return false;
@@ -305,7 +391,7 @@ export const bookingStore = {
 
     // 2. Storage event listener (standard browser cross-tab event)
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+      if (event.key === STORAGE_KEY || event.key === MAINTENANCE_STORAGE_KEY) {
         callback({
           action: "UPDATE",
           timestamp: Date.now(),

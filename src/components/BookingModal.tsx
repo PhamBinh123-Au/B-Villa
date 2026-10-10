@@ -26,6 +26,7 @@ import {
   Home,
   AlertCircle,
   Clock,
+  Wrench,
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -84,6 +85,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   if (!isOpen) return null;
 
   const currentVilla = siteConfig.villas.find((v) => v.id === villaId) || siteConfig.villas[0];
+  const isUnderMaintenance = currentVilla ? bookingStore.isVillaUnderMaintenance(currentVilla.id) : false;
+  const maintenanceInfo = currentVilla ? bookingStore.getVillaMaintenanceInfo(currentVilla.id) : undefined;
 
   const conflict =
     checkIn && checkOut && currentVilla
@@ -92,6 +95,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isUnderMaintenance) {
+      alert(
+        `Reservation Prohibited: ${currentVilla.name} is currently undergoing scheduled maintenance. Reservations are temporarily closed for this property. Please choose another villa.`
+      );
+      return;
+    }
 
     if (!checkIn || !checkOut) {
       alert("Please select both check-in and check-out dates.");
@@ -276,6 +286,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     >
                       {siteConfig.villas.map((v) => {
                         const isSelected = v.id === currentVilla.id;
+                        const isVMaint = bookingStore.isVillaUnderMaintenance(v.id);
                         return (
                           <button
                             key={v.id}
@@ -303,9 +314,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#A6834F] transition-colors">
-                                  {v.name}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-[#A6834F] transition-colors">
+                                    {v.name}
+                                  </p>
+                                  {isVMaint && (
+                                    <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 font-bold px-1.5 py-0.5 rounded-full uppercase flex items-center gap-0.5 flex-shrink-0">
+                                      <Wrench className="w-2.5 h-2.5" />
+                                      <span>Maintenance</span>
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[11px] text-neutral-400 truncate">
                                   {v.district} • {v.bedrooms} PN • {v.poolType}
                                 </p>
@@ -326,6 +345,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <p className="text-[11px] text-neutral-500 mt-1.5 italic">
                   Max capacity: {currentVilla.maxGuests} guests • {currentVilla.bedrooms} En-suite Bedrooms
                 </p>
+
+                {/* Prominent Maintenance Alert Banner if Selected Villa is Under Maintenance */}
+                {isUnderMaintenance && (
+                  <div className="mt-3 p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs flex items-start gap-3 animate-fade-in shadow-sm">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 flex-shrink-0 mt-0.5">
+                      <Wrench className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-amber-950 text-sm">
+                        Sanctuary Under Maintenance
+                      </h5>
+                      <p className="text-amber-800 text-xs mt-0.5 leading-relaxed font-light">
+                        {maintenanceInfo?.reason || `${currentVilla.name} is currently undergoing scheduled maintenance & renovation.`} Inquiries and reservations are temporarily closed for this property. Please choose another villa.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Luxury Check-in & Check-out Date Pickers */}
@@ -484,19 +520,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || !!conflict || !checkIn || !checkOut}
+                  disabled={isSubmitting || !!conflict || !checkIn || !checkOut || isUnderMaintenance}
                   className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 text-[#C2A476] group-hover:text-white" />
-                  <span>
-                    {conflict
-                      ? "Dates Unavailable — Choose Other Dates"
-                      : !checkIn || !checkOut
-                      ? "Select Check-in & Check-out Dates"
-                      : isSubmitting
-                      ? "Submitting Inquiry..."
-                      : "Submit Reservation Inquiry"}
-                  </span>
+                  {isUnderMaintenance ? (
+                    <>
+                      <Wrench className="w-4 h-4 text-amber-400" />
+                      <span>Unavailable — Villa Under Maintenance</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-[#C2A476] group-hover:text-white" />
+                      <span>
+                        {conflict
+                          ? "Dates Unavailable — Choose Other Dates"
+                          : !checkIn || !checkOut
+                          ? "Select Check-in & Check-out Dates"
+                          : isSubmitting
+                          ? "Submitting Inquiry..."
+                          : "Submit Reservation Inquiry"}
+                      </span>
+                    </>
+                  )}
                 </button>
                 <p className="text-[11px] text-center text-neutral-400 mt-2">
                   No payment required now. Our team will verify availability and confirm within 1 hour.

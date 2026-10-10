@@ -44,6 +44,13 @@ export interface BookingInquiry {
   createdAt: string;
 }
 
+export interface VillaMaintenanceInfo {
+  villaId: string;
+  isMaintenance: boolean;
+  reason?: string;
+  updatedAt?: string;
+}
+
 export interface AmenityItem {
   icon: string;
   title: string;
