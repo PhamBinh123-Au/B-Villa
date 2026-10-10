@@ -7,6 +7,11 @@ import { siteConfig } from "@/config/siteConfig";
 import { Villa } from "@/types";
 import { bookingStore } from "@/lib/bookingStore";
 import {
+  LuxuryDatePicker,
+  formatLuxuryDate,
+  addDays,
+} from "./LuxuryDatePicker";
+import {
   X,
   Calendar,
   Users,
@@ -20,6 +25,7 @@ import {
   Check,
   Home,
   AlertCircle,
+  Clock,
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -86,6 +92,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!checkIn || !checkOut) {
+      alert("Please select both check-in and check-out dates.");
+      return;
+    }
+
+    if (checkIn >= checkOut) {
+      alert("Check-out date must be strictly after check-in date.");
+      return;
+    }
+
+    if (conflict) {
+      alert(
+        `Overlapping Booking Error: ${currentVilla.name} is already reserved from ${conflict.checkIn} to ${conflict.checkOut}. Please choose other available dates.`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -95,17 +119,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         guestName,
         email,
         phone,
-        checkIn: checkIn || new Date().toISOString().split("T")[0],
-        checkOut: checkOut || new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
+        checkIn,
+        checkOut,
         adults: Number(adults),
         children: Number(children),
         specialRequests,
       });
 
       setSubmittedInquiryId(newInquiry.id);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("An error occurred while saving your inquiry. Please try again.");
+      alert(err.message || "An error occurred while saving your inquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -304,35 +328,50 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </p>
               </div>
 
-              {/* Check-in & Check-out Dates */}
+              {/* Luxury Check-in & Check-out Date Pickers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs uppercase font-semibold tracking-wider text-neutral-700 mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#C2A476]" />
-                    <span>Check-in Date</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase font-semibold tracking-wider text-neutral-700 mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#C2A476]" />
-                    <span>Check-out Date</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
+                <LuxuryDatePicker
+                  label="Check-in Date"
+                  selectedDate={checkIn}
+                  onSelectDate={(val) => {
+                    setCheckIn(val);
+                    if (val && (!checkOut || checkOut <= val)) {
+                      setCheckOut(addDays(val, 2));
+                    }
+                  }}
+                  villaId={currentVilla.id}
+                  placeholder="Select Check-in Date"
+                />
+
+                <LuxuryDatePicker
+                  label="Check-out Date"
+                  selectedDate={checkOut}
+                  onSelectDate={(val) => setCheckOut(val)}
+                  villaId={currentVilla.id}
+                  isCheckOut={true}
+                  checkInDate={checkIn}
+                  minDate={checkIn ? addDays(checkIn, 1) : undefined}
+                  placeholder="Select Check-out Date"
+                />
               </div>
+
+              {/* Stay Duration & Dates Confirmation Pill */}
+              {checkIn && checkOut && checkOut > checkIn && !conflict && (
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EAE5DC] flex items-center justify-between text-xs text-neutral-700 animate-fade-in">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C2A476]" />
+                    <span className="font-semibold text-neutral-900">
+                      Stay Duration:
+                    </span>
+                    <span>
+                      {Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))} Nights
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Dates Available
+                  </span>
+                </div>
+              )}
 
               {/* Guest Counts */}
               <div className="grid grid-cols-2 gap-4">
@@ -445,13 +484,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting || !!conflict}
+                  disabled={isSubmitting || !!conflict || !checkIn || !checkOut}
                   className="w-full bg-[#14171A] hover:bg-[#C2A476] text-white py-4 px-6 rounded-2xl text-xs font-semibold uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-[#C2A476] group-hover:text-white" />
                   <span>
                     {conflict
                       ? "Dates Unavailable — Choose Other Dates"
+                      : !checkIn || !checkOut
+                      ? "Select Check-in & Check-out Dates"
                       : isSubmitting
                       ? "Submitting Inquiry..."
                       : "Submit Reservation Inquiry"}

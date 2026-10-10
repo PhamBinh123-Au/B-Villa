@@ -6,6 +6,11 @@ import { siteConfig } from "@/config/siteConfig";
 import { bookingStore, RealtimeSyncPayload } from "@/lib/bookingStore";
 import { BookingInquiry, InquiryStatus } from "@/types";
 import {
+  LuxuryDatePicker,
+  addDays,
+  formatLuxuryDate,
+} from "@/components/LuxuryDatePicker";
+import {
   Shield,
   Lock,
   ArrowLeft,
@@ -236,6 +241,16 @@ export default function AdminPage() {
     e.preventDefault();
     if (!editingInquiry) return;
 
+    if (!editingInquiry.checkIn || !editingInquiry.checkOut) {
+      alert("Please select both check-in and check-out dates.");
+      return;
+    }
+
+    if (editingInquiry.checkIn >= editingInquiry.checkOut) {
+      alert("Check-out date must be strictly after check-in date.");
+      return;
+    }
+
     // Check conflict
     const conflict = bookingStore.hasDateConflict(
       editingInquiry.checkIn,
@@ -245,13 +260,10 @@ export default function AdminPage() {
     );
 
     if (conflict && editingInquiry.status !== "cancelled") {
-      if (
-        !confirm(
-          `Warning: These dates overlap with existing reservation #${conflict.id} (${conflict.guestName}: ${conflict.checkIn} to ${conflict.checkOut}). Save anyway?`
-        )
-      ) {
-        return;
-      }
+      alert(
+        `Overlapping Booking Prohibited!\n\nThese dates conflict with reservation #${conflict.id} (${conflict.guestName}: ${conflict.checkIn} to ${conflict.checkOut}).\n\nPlease select non-overlapping dates or cancel the conflicting reservation first.`
+      );
+      return;
     }
 
     const villaMatch = siteConfig.villas.find((v) => v.id === editingInquiry.villaId);
@@ -260,13 +272,17 @@ export default function AdminPage() {
       villaName: villaMatch ? villaMatch.name : editingInquiry.villaName,
     };
 
-    bookingStore.updateInquiry(editingInquiry.id, updatedWithVillaName);
-    reloadInquiries();
-    setEditingInquiry(null);
-    showNotification(
-      `Reservation #${editingInquiry.id} Updated!`,
-      "Public website calendar has been refreshed immediately."
-    );
+    try {
+      bookingStore.updateInquiry(editingInquiry.id, updatedWithVillaName);
+      reloadInquiries();
+      setEditingInquiry(null);
+      showNotification(
+        `Reservation #${editingInquiry.id} Updated!`,
+        "Public website calendar has been refreshed immediately."
+      );
+    } catch (err: any) {
+      alert(err.message || "Failed to update reservation.");
+    }
   };
 
   const handleCreateManualBooking = (e: React.FormEvent) => {
@@ -278,7 +294,7 @@ export default function AdminPage() {
     }
 
     if (newBookingData.checkIn >= newBookingData.checkOut) {
-      alert("Check-out date must be after check-in date.");
+      alert("Check-out date must be strictly after check-in date.");
       return;
     }
 
@@ -290,29 +306,30 @@ export default function AdminPage() {
     );
 
     if (conflict && newBookingData.status !== "cancelled") {
-      if (
-        !confirm(
-          `Warning: These dates overlap with existing reservation #${conflict.id} (${conflict.guestName}: ${conflict.checkIn} to ${conflict.checkOut}). Continue anyway?`
-        )
-      ) {
-        return;
-      }
+      alert(
+        `Overlapping Booking Prohibited!\n\nThis villa is already reserved from ${conflict.checkIn} to ${conflict.checkOut} by ${conflict.guestName} (#${conflict.id}).\n\nOverlapping bookings are strictly prohibited. Please choose non-overlapping dates.`
+      );
+      return;
     }
 
     const villaMatch = siteConfig.villas.find((v) => v.id === newBookingData.villaId);
     const villaName = villaMatch ? villaMatch.name : "Villa Residence";
 
-    bookingStore.addInquiry({
-      ...newBookingData,
-      villaName,
-    });
+    try {
+      bookingStore.addInquiry({
+        ...newBookingData,
+        villaName,
+      });
 
-    reloadInquiries();
-    setIsAddModalOpen(false);
-    showNotification(
-      "Dates Blocked / New Reservation Created!",
-      `Website calendar locked for ${villaName} (${newBookingData.checkIn} - ${newBookingData.checkOut})`
-    );
+      reloadInquiries();
+      setIsAddModalOpen(false);
+      showNotification(
+        "Dates Blocked / New Reservation Created!",
+        `Website calendar locked for ${villaName} (${newBookingData.checkIn} - ${newBookingData.checkOut})`
+      );
+    } catch (err: any) {
+      alert(err.message || "Failed to create reservation.");
+    }
   };
 
   const handleResetSample = () => {
@@ -660,6 +677,43 @@ export default function AdminPage() {
                     </div>
                   )}
 
+                  {/* Overlapping Conflict Alert Banner */}
+                  {(() => {
+                    const conflicts = bookingStore.findConflictsForInquiry(inq);
+                    if (conflicts.length === 0) return null;
+                    return (
+                      <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in shadow-sm">
+                        <div className="flex items-start gap-2.5">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold text-rose-900 text-xs sm:text-sm">
+                              Overlapping Date Conflict Detected!
+                            </p>
+                            <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
+                              This booking overlaps with #{conflicts.map((c) => `${c.id} (${c.guestName}: ${c.checkIn} → ${c.checkOut})`).join(", ")}. Please adjust dates or cancel one reservation to release calendar dates.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingInquiry({ ...inq })}
+                            className="px-3 py-1.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 rounded-lg text-xs font-bold shadow-sm cursor-pointer transition-colors"
+                          >
+                            Adjust Dates
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStatusChange(inq.id, "cancelled")}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm cursor-pointer transition-colors"
+                          >
+                            Cancel Reservation
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-100">
                     <div className="flex items-start sm:items-center gap-3">
                       <span className="font-mono text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-md">
@@ -839,36 +893,65 @@ export default function AdminPage() {
               </div>
 
               {/* Dates */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
-                    Check-in Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editingInquiry.checkIn}
-                    onChange={(e) =>
-                      setEditingInquiry({ ...editingInquiry, checkIn: e.target.value })
-                    }
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
-                    Check-out Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editingInquiry.checkOut}
-                    onChange={(e) =>
-                      setEditingInquiry({ ...editingInquiry, checkOut: e.target.value })
-                    }
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <LuxuryDatePicker
+                  label="Check-in Date"
+                  selectedDate={editingInquiry.checkIn}
+                  onSelectDate={(val) =>
+                    setEditingInquiry((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            checkIn: val,
+                            checkOut: val && (!prev.checkOut || prev.checkOut <= val) ? addDays(val, 2) : prev.checkOut,
+                          }
+                        : null
+                    )
+                  }
+                  villaId={editingInquiry.villaId}
+                  excludeInquiryId={editingInquiry.id}
+                  placeholder="Select Check-in Date"
+                />
+                <LuxuryDatePicker
+                  label="Check-out Date"
+                  selectedDate={editingInquiry.checkOut}
+                  onSelectDate={(val) =>
+                    setEditingInquiry((prev) => (prev ? { ...prev, checkOut: val } : null))
+                  }
+                  villaId={editingInquiry.villaId}
+                  isCheckOut={true}
+                  checkInDate={editingInquiry.checkIn}
+                  minDate={editingInquiry.checkIn ? addDays(editingInquiry.checkIn, 1) : undefined}
+                  excludeInquiryId={editingInquiry.id}
+                  placeholder="Select Check-out Date"
+                />
               </div>
+
+              {/* Conflict Alert inside Edit Modal */}
+              {(() => {
+                const conflict =
+                  editingInquiry.checkIn && editingInquiry.checkOut && editingInquiry.status !== "cancelled"
+                    ? bookingStore.hasDateConflict(
+                        editingInquiry.checkIn,
+                        editingInquiry.checkOut,
+                        editingInquiry.villaId,
+                        editingInquiry.id
+                      )
+                    : undefined;
+
+                if (!conflict) return null;
+                return (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-rose-900">Overlapping Date Conflict Detected!</p>
+                      <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
+                        These dates overlap with reservation #{conflict.id} ({conflict.guestName}: {conflict.checkIn} → {conflict.checkOut}). Please select non-overlapping dates.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Status */}
               <div>
@@ -1005,13 +1088,30 @@ export default function AdminPage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Save Changes</span>
-                </button>
+                {(() => {
+                  const hasConflict = Boolean(
+                    editingInquiry.checkIn &&
+                    editingInquiry.checkOut &&
+                    editingInquiry.status !== "cancelled" &&
+                    bookingStore.hasDateConflict(
+                      editingInquiry.checkIn,
+                      editingInquiry.checkOut,
+                      editingInquiry.villaId,
+                      editingInquiry.id
+                    )
+                  );
+
+                  return (
+                    <button
+                      type="submit"
+                      disabled={!editingInquiry.checkIn || !editingInquiry.checkOut || hasConflict}
+                      className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{hasConflict ? "Dates Conflict — Cannot Save" : "Save Changes"}</span>
+                    </button>
+                  );
+                })()}
               </div>
             </form>
           </div>
@@ -1059,37 +1159,59 @@ export default function AdminPage() {
                 </select>
               </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
-                    Check-in Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newBookingData.checkIn}
-                    onChange={(e) =>
-                      setNewBookingData({ ...newBookingData, checkIn: e.target.value })
-                    }
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1.5">
-                    Check-out Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newBookingData.checkOut}
-                    onChange={(e) =>
-                      setNewBookingData({ ...newBookingData, checkOut: e.target.value })
-                    }
-                    className="w-full bg-[#FAF8F5] border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C2A476]"
-                    required
-                  />
-                </div>
+              {/* Luxury Dates Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <LuxuryDatePicker
+                  label="Check-in Date"
+                  selectedDate={newBookingData.checkIn}
+                  onSelectDate={(val) =>
+                    setNewBookingData((prev) => ({
+                      ...prev,
+                      checkIn: val,
+                      checkOut: val && (!prev.checkOut || prev.checkOut <= val) ? addDays(val, 2) : prev.checkOut,
+                    }))
+                  }
+                  villaId={newBookingData.villaId}
+                  placeholder="Select Check-in Date"
+                />
+                <LuxuryDatePicker
+                  label="Check-out Date"
+                  selectedDate={newBookingData.checkOut}
+                  onSelectDate={(val) =>
+                    setNewBookingData((prev) => ({ ...prev, checkOut: val }))
+                  }
+                  villaId={newBookingData.villaId}
+                  isCheckOut={true}
+                  checkInDate={newBookingData.checkIn}
+                  minDate={newBookingData.checkIn ? addDays(newBookingData.checkIn, 1) : undefined}
+                  placeholder="Select Check-out Date"
+                />
               </div>
+
+              {/* Conflict Alert inside Add Modal */}
+              {(() => {
+                const conflict =
+                  newBookingData.checkIn && newBookingData.checkOut && newBookingData.status !== "cancelled"
+                    ? bookingStore.hasDateConflict(
+                        newBookingData.checkIn,
+                        newBookingData.checkOut,
+                        newBookingData.villaId
+                      )
+                    : undefined;
+
+                if (!conflict) return null;
+                return (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-rose-900">Overlapping Booking Prohibited!</p>
+                      <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
+                        This villa is already reserved from {conflict.checkIn} to {conflict.checkOut} by {conflict.guestName} (#{conflict.id}). Overlapping reservations cannot be saved.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Guest Name / Reason */}
               <div>
@@ -1169,13 +1291,29 @@ export default function AdminPage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Lock Dates on Calendar</span>
-                </button>
+                {(() => {
+                  const hasConflict = Boolean(
+                    newBookingData.checkIn &&
+                    newBookingData.checkOut &&
+                    newBookingData.status !== "cancelled" &&
+                    bookingStore.hasDateConflict(
+                      newBookingData.checkIn,
+                      newBookingData.checkOut,
+                      newBookingData.villaId
+                    )
+                  );
+
+                  return (
+                    <button
+                      type="submit"
+                      disabled={!newBookingData.checkIn || !newBookingData.checkOut || hasConflict}
+                      className="w-1/2 py-2.5 rounded-xl bg-[#C2A476] hover:bg-[#a88a59] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{hasConflict ? "Dates Conflict — Cannot Lock" : "Lock Dates on Calendar"}</span>
+                    </button>
+                  );
+                })()}
               </div>
             </form>
           </div>

@@ -804,7 +804,7 @@ export const Hero: React.FC<HeroProps> = ({ onCheckAvailability }) => {
                             className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition-all relative ${
                               isSelected
                                 ? "bg-[#C2A476] text-white font-bold shadow-md scale-105"
-                                : hasConflict || isBooked
+                                : hasConflict
                                 ? "bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-75"
                                 : isPast
                                 ? "text-neutral-300 cursor-not-allowed opacity-40"

@@ -117,11 +117,23 @@ export const bookingStore = {
   addInquiry(
     inquiryData: Omit<BookingInquiry, "id" | "createdAt" | "status"> & { status?: InquiryStatus }
   ): BookingInquiry {
+    const status = inquiryData.status || "pending";
+
+    // Strictly validate against overlapping reservations for the same villa
+    if (status !== "cancelled" && inquiryData.villaId && inquiryData.checkIn && inquiryData.checkOut) {
+      const conflict = this.hasDateConflict(inquiryData.checkIn, inquiryData.checkOut, inquiryData.villaId);
+      if (conflict) {
+        throw new Error(
+          `Overlapping Booking Prohibited: Villa is already reserved from ${conflict.checkIn} to ${conflict.checkOut} (#${conflict.id} - ${conflict.guestName}). Please choose non-overlapping dates.`
+        );
+      }
+    }
+
     const inquiries = this.getInquiries();
     const newInquiry: BookingInquiry = {
       ...inquiryData,
       id: `INQ-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: inquiryData.status || "pending",
+      status,
       createdAt: new Date().toISOString(),
     };
 
@@ -139,10 +151,25 @@ export const bookingStore = {
 
   updateInquiry(id: string, updatedFields: Partial<BookingInquiry>): void {
     const inquiries = this.getInquiries();
+    const target = inquiries.find((item) => item.id === id);
+    if (!target) return;
+
+    const merged = { ...target, ...updatedFields };
+
+    // Strictly validate that update does not create an overlap with another reservation
+    if (merged.status !== "cancelled") {
+      const conflict = this.hasDateConflict(merged.checkIn, merged.checkOut, merged.villaId, id);
+      if (conflict) {
+        throw new Error(
+          `Overlapping Booking Prohibited: Dates ${merged.checkIn} to ${merged.checkOut} conflict with reservation #${conflict.id} (${conflict.guestName}).`
+        );
+      }
+    }
+
     let updatedInquiry: BookingInquiry | undefined;
     const updated = inquiries.map((item) => {
       if (item.id === id) {
-        updatedInquiry = { ...item, ...updatedFields };
+        updatedInquiry = merged;
         return updatedInquiry;
       }
       return item;
@@ -157,6 +184,22 @@ export const bookingStore = {
         timestamp: Date.now(),
       });
     }
+  },
+
+  /**
+   * Find any other active inquiries that overlap with the specified inquiry
+   */
+  findConflictsForInquiry(inquiry: BookingInquiry): BookingInquiry[] {
+    if (inquiry.status === "cancelled") return [];
+    const inquiries = this.getInquiries();
+    return inquiries.filter(
+      (other) =>
+        other.id !== inquiry.id &&
+        other.villaId === inquiry.villaId &&
+        other.status !== "cancelled" &&
+        inquiry.checkIn < other.checkOut &&
+        other.checkIn < inquiry.checkOut
+    );
   },
 
   updateStatus(id: string, status: InquiryStatus): void {
